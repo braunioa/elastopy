@@ -29,6 +29,6 @@ def solver(model, material, b_force, trac_bc, displ_bc, EPS0=0, t=1):
 
     U = np.linalg.solve(Km, Pm)
 
-    SIG = stress.recovery(model, material, U, EPS0)
+    SIG = stress.recovery(model, material, U, EPS0, t)
 
     return U, SIG

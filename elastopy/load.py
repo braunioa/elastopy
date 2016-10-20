@@ -1,5 +1,5 @@
 import numpy as np
-from stiffness import c_matrix
+from elastopy.stiffness import c_matrix
 
 
 def Pb_vector(model, b_force, t=1):

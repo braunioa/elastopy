@@ -1,7 +1,8 @@
 import numpy as np
-from stiffness import c_matrix
+from elastopy.stiffness import c_matrix
 
-def recovery(model, material, U, EPS0):
+
+def recovery(model, material, U, EPS0, t=1):
     """Recovery stress at nodes from displacement
 
     """

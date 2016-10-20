@@ -8,7 +8,6 @@ def K_matrix(model, material, t=1):
     K = np.zeros((model.ndof, model.ndof))
 
     for e, conn in enumerate(model.CONN):
-        if 
 
         xyz = model.XYZ[conn]
         surf = model.surf_of_ele[e]
