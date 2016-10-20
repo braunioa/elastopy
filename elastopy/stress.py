@@ -1,5 +1,5 @@
 import numpy as np
-
+from stiffness import c_matrix
 
 def recovery(model, material, U, EPS0):
     """Recovery stress at nodes from displacement
@@ -58,20 +58,6 @@ def recovery(model, material, U, EPS0):
             SIG[d, :] += sig/num_ele_shrg
 
     return SIG
-
-
-def c_matrix(E, nu):
-    """Build the element constitutive matrix
-
-    """
-    C = np.zeros((3, 3))
-    C[0, 0] = 1.0
-    C[1, 1] = 1.0
-    C[1, 0] = nu
-    C[0, 1] = nu
-    C[2, 2] = (1.0 - nu)/2.0
-    C = (E/(1.0-nu**2.0))*C
-    return C
 
 
 def principal_max(s11, s22, s12):
