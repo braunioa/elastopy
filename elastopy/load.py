@@ -92,7 +92,7 @@ def pe_vector(model, xyz, E, nu, eps0, t=1):
     """
     gauss_points = model.chi / np.sqrt(3.0)
 
-    C = c_matrix(E, nu)
+    C = c_matrix(E, nu, t)
 
     pe = np.zeros(8)
     for gp in gauss_points:

@@ -28,7 +28,7 @@ def recovery(model, material, U, EPS0):
             E = 1.0
             nu = 0.1
 
-        C = c_matrix(E, nu)
+        C = c_matrix(E, nu, t)
 
         u = U[dof]
 
