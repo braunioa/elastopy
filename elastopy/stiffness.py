@@ -36,7 +36,7 @@ def k_matrix(model, xyz, E, nu, t=1):
     """
     gauss_points = model.chi / np.sqrt(3.0)
 
-    C = c_matrix(E, nu)
+    C = c_matrix(E, nu, t)
 
     k = np.zeros((8, 8))
 
@@ -59,16 +59,21 @@ def k_matrix(model, xyz, E, nu, t=1):
     return k
 
 
-def c_matrix(E, nu):
+def c_matrix(E, nu, t=1):
     """Build the element constitutive matrix
 
     """
+    if callable(E) is True:
+        E_value = E(t)
+    else:
+        E_value = E
+
     C = np.zeros((3, 3))
     C[0, 0] = 1.0
     C[1, 1] = 1.0
     C[1, 0] = nu
     C[0, 1] = nu
     C[2, 2] = (1.0 - nu)/2.0
-    C = (E/(1.0-nu**2.0))*C
+    C = (E_value/(1.0-nu**2.0))*C
 
     return C
