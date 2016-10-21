@@ -3,7 +3,7 @@ from elastopy import statics
 from elastopy import gmsh
 from elastopy import plotter
 from elastopy import data
-nfrom diffuspy import steadystate
+from diffuspy import steadystate
 from diffuspy import plotter as plottert
 import matplotlib.pyplot as plt
 from elastopy import stress
@@ -47,12 +47,7 @@ gma = 9820.0
 
 
 def trac_bc(x1, x2, t=1):
-    return {('line', 7): [(x2 <= 186.13)*(gma*(186.13-x2)), 0.0],
-            ('line', 8): [(17.07 * gma - 116.13 * gma) * (x2 - 70.0) /
-                          (169.06 - 70.0) + 116.13 * gma,
-                          -((17.07 * gma - 116.13 * gma) * (x2 - 70.0) /
-                            (169.06 - 70.0) + 116.13 * gma)],
-            ('line', 9): [0.0, - 116.13 * gma]}
+    return {}
 
 
 def displ_bc(x1, x2):
@@ -67,9 +62,7 @@ def b_heat(x1, x2, t=1):        # [J/(s m3)]
     if t == 0:
         return 0
     else:
-        return ((x2 >= 70) * 12 * (1/864 * np.exp(3.47 +
-                                                  0.4*np.log(t/P) -
-                                                  0.475*(np.log(t/P))**2)))
+        return 0
 
 
 def flux_bc(x1, x2, t=1):
@@ -91,7 +84,7 @@ def temp_bc(x1, x2, t=1):
             10: 10}
 
 t_int = 60*60*24*2             # Interval
-dt = t_int/500                  # step size
+dt = t_int/10                  # step size
 N = int(t_int/dt)+1             # number of steps
 
 U = np.zeros((model.ndof, N))   # Array for each time step
@@ -105,13 +98,13 @@ print('Beginning computations...')
 for n in range(1, N):
     t = n * dt                  # time
 
-    T[:, n] = steadystate.solver(model, material, b_heat, flux_bc,
-                                 temp_bc, t)
+    # T[:, n] = steadystate.solver(model, material, b_heat, flux_bc,
+    #                              temp_bc, t)
 
-    EPS0 = thermal_strain(model, material, T[:, n], T[:, n-1])
+    # EPS0 = thermal_strain(model, material, T[:, n], T[:, n-1])
 
     U[:, n], SIG[:, :, n] = statics.solver(model, material,
-                                           b_force, trac_bc, displ_bc, EPS0, t)
+                                           b_force, trac_bc, displ_bc, t)
 
 print('Computations done!')
 
@@ -137,10 +130,10 @@ print('Beginning plotting...')
 plot_spmax = True
 plot_spmin = True
 plot_displ = True
-plot_temp = True
-plot_spmax_ani = True
-plot_spmin_ani = True
-plot_displ_ani = True
+plot_temp = False
+plot_spmax_ani = False
+plot_spmin_ani = False
+plot_displ_ani = False
 
 
 if plot_spmax_ani is True:
@@ -153,8 +146,7 @@ if plot_spmin_ani is True:
                              name="spmin.gif", vmin=-6.5, vmax=0,
                              interval=100, ftr=1e6, lev=10)
 
-time = [0, 1, 2, 3, 4, 6, 8,
-        10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44]  # in [h]
+time = [0, 1, 2, 3]  # in [h]
 
 
 T_point = []
@@ -211,4 +203,6 @@ if plot_temp is True:
 if plot_displ_ani is True:
     plotter.displ_animation(U, model, t_int, dt, name='displ.gif', magf=5000,
                             interval=100)
+
+plt.show()
 print('Plotting done!')
