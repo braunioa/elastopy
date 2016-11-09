@@ -4,6 +4,7 @@ from elastopy import gmsh
 from elastopy import plotter
 from elastopy import data
 from diffuspy import steadystate
+from diffuspy import transient
 from diffuspy import plotter as plottert
 import matplotlib.pyplot as plt
 from elastopy import stress

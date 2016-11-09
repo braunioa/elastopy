@@ -144,8 +144,8 @@ def stresses_dyn(model, SIG, ax, ftr=1, s11=False, s12=False, s22=False,
     """
     if s11 is True:
         s_range = [np.amin(s11), np.amax(s11)]
-        ax.set_title(r'Stress 11 ('+str(ftr)+' Pa)')
-        im = draw.tricontourf_dyn(model, SIG[:, 0]/ftr, ax, 'spring', lev=lev)
+        ax.set_title(r'Temperature $^{\circ} C$')
+        im = draw.tricontourf_dyn(model, SIG[:, 0]/ftr, ax, 'hot', lev=lev)
 
     if s12 is True:
         s_range = [np.amin(s12), np.amax(s12)]
@@ -203,6 +203,8 @@ def stress_animation(SIG, model, t_int, dt, name="Stresses.gif", brate=500,
         cmap_color = 'plasma'
     if 'spmin' in sig_plt:
         cmap_color = 'viridis'
+    if 's11' in sig_plt:
+        cmap_color = 'hot'
     else:
         cmap_color = 'plasma'
 
@@ -212,7 +214,7 @@ def stress_animation(SIG, model, t_int, dt, name="Stresses.gif", brate=500,
     # fake up the array of the scalar mappable. Urgh...
     sm._A = []
     cbar = plt.colorbar(sm)
-    cbar.set_label(r'Stress')
+    cbar.set_label(r'Temperature $^{\circ} C$')
 
     ani = anime(frm, fig, t_int, interval=interval)
     ani.save(name, writer='imagemagick', bitrate=brate)

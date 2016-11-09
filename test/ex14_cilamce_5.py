@@ -98,10 +98,10 @@ print('Beginning computations...')
 for n in range(1, N):
     t = n * dt                  # time
 
-    # T[:, n] = steadystate.solver(model, material, b_heat, flux_bc,
-    #                              temp_bc, t)
+    T[:, n] = steadystate.solver(model, material, b_heat, flux_bc,
+                                 temp_bc, t)
 
-    # EPS0 = thermal_strain(model, material, T[:, n], T[:, n-1])
+    EPS0 = thermal_strain(model, material, T[:, n], T[:, n-1])
 
     U[:, n], SIG[:, :, n] = statics.solver(model, material,
                                            b_force, trac_bc, displ_bc, t)
@@ -127,14 +127,16 @@ plt.savefig('Q_evo.pdf', bbox_inches='tight')
 PLOT SPMAX, SPMIN, T AND U FIELD AT SPECIFIC TIMES
 """
 print('Beginning plotting...')
-plot_spmax = True
-plot_spmin = True
-plot_displ = True
+plot_spmax = False
+plot_spmin = False
+plot_displ = False
 plot_temp = False
 plot_spmax_ani = False
 plot_spmin_ani = False
 plot_displ_ani = False
+plot_temp_ani = True
 
+time = [0, 1, 2, 3]  # in [h]
 
 if plot_spmax_ani is True:
     plotter.stress_animation(SIG, model, t_int, dt, spmax=True,
@@ -146,8 +148,8 @@ if plot_spmin_ani is True:
                              name="spmin.gif", vmin=-6.5, vmax=0,
                              interval=100, ftr=1e6, lev=10)
 
-time = [0, 1, 2, 3]  # in [h]
-
+if plot_temp_ani is True:
+    plottert.animation()
 
 T_point = []
 time_point = []

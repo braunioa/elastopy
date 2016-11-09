@@ -3,7 +3,8 @@ from elastopy import statics
 from elastopy import gmsh
 from elastopy import plotter
 from elastopy import data
-nfrom diffuspy import steadystate
+from diffuspy import steadystate
+from diffuspy import transient
 from diffuspy import plotter as plottert
 import matplotlib.pyplot as plt
 from elastopy import stress
@@ -91,7 +92,7 @@ def temp_bc(x1, x2, t=1):
             10: 10}
 
 t_int = 60*60*24*2             # Interval
-dt = t_int/500                  # step size
+dt = t_int/300             # step size
 N = int(t_int/dt)+1             # number of steps
 
 U = np.zeros((model.ndof, N))   # Array for each time step
@@ -134,14 +135,17 @@ plt.savefig('Q_evo.pdf', bbox_inches='tight')
 PLOT SPMAX, SPMIN, T AND U FIELD AT SPECIFIC TIMES
 """
 print('Beginning plotting...')
-plot_spmax = True
-plot_spmin = True
-plot_displ = True
-plot_temp = True
-plot_spmax_ani = True
-plot_spmin_ani = True
-plot_displ_ani = True
+plot_spmax = False
+plot_spmin = False
+plot_displ = False
+plot_temp = False
+plot_spmax_ani = False
+plot_spmin_ani = False
+plot_displ_ani = False
+plot_temp_ani = True
 
+time = [0, 1, 2, 3, 4, 6, 8,
+        10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44]  # in [h]
 
 if plot_spmax_ani is True:
     plotter.stress_animation(SIG, model, t_int, dt, spmax=True,
@@ -153,9 +157,13 @@ if plot_spmin_ani is True:
                              name="spmin.gif", vmin=-6.5, vmax=0,
                              interval=100, ftr=1e6, lev=10)
 
-time = [0, 1, 2, 3, 4, 6, 8,
-        10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44]  # in [h]
-
+if plot_temp_ani is True:
+    print('Plotting temperature animation...')
+    T_mod = np.zeros((model.nn, 3, N))
+    T_mod[:, 0, :] = T
+    plotter.stress_animation(T_mod, model, t_int, dt, s11=True,
+                             name="temp.gif", vmin=0, vmax=100,
+                             interval=100, ftr=1, lev=10)
 
 T_point = []
 time_point = []
