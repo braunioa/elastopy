@@ -351,7 +351,8 @@ def draw_bc_neumann_value(traction, model, name, dpi):
                                                  headwidth=5, shrink=0.1))
 
 
-def tricontourf(model, sig, ax, cmap, lev, vmin=None, vmax=None):
+def tricontourf(model, sig, ax, cmap, lev, vmin=None, vmax=None,
+                cbar_orientation='vertical'):
     """Plot contour with the tricoutour function and the boundary line with
     the boundary node.
 
@@ -361,9 +362,6 @@ def tricontourf(model, sig, ax, cmap, lev, vmin=None, vmax=None):
     bn = model.nodes_in_bound_line
 
     xx, yy, zz = c[:, 0], c[:, 1],  sig
-
-    ccx = np.append(c[bn[:, 1], 0], c[bn[0, 1], 0])
-    ccy = np.append(c[bn[:, 1], 1], c[bn[0, 1], 1])
 
     triangles = []
     for n1, n2, n3, n4 in model.CONN:
@@ -380,16 +378,13 @@ def tricontourf(model, sig, ax, cmap, lev, vmin=None, vmax=None):
     CS3 = ax.tricontour(xx, yy, triangles, zz, lev, colors='black')
     ax.clabel(CS3, fontsize=8, colors='k', fmt='%1.1f')
 
-    # ax.plot(ccx, ccy, '-k')
-
     # # Change the colorbar range
     sm = plt.cm.ScalarMappable(cmap=cmap,
                                norm=plt.Normalize(vmin=vmin, vmax=vmax))
     # # fake up the array of the scalar mappable. Urgh...
     sm._A = []
-    cbar = plt.colorbar(sm)
+    cbar = plt.colorbar(sm, orientation=cbar_orientation)
 
-    # plt.colorbar(CS2, ax=ax)
 
 
 def tricontourf_dyn(model, sig, ax, cmap, lev, vmin=None, vmax=None):

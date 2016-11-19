@@ -69,7 +69,8 @@ def model_deformed(model, U, magf=1, ele=False, name=None, color='Tomato',
 
 
 def stresses(model, SIG, ftr=1, s11=False, s12=False, s22=False, spmax=False,
-             spmin=False, dpi=100, name=None, lev=20, vmin=None, vmax=None):
+             spmin=False, dpi=100, name=None, lev=20, vmin=None, vmax=None,
+             cbar_orientation='vertical'):
     """Plot stress with nodal stresses
 
     """
@@ -80,29 +81,29 @@ def stresses(model, SIG, ftr=1, s11=False, s12=False, s22=False, spmax=False,
     if s11 is True:
         ax.set_title(r'Stress 11 ('+str(ftr)+' Pa)')
         draw.tricontourf(model, SIG[:, 0]/ftr, ax, 'spring', lev=lev,
-                         vmin=vmin, vmax=vmax)
+                         vmin=vmin, vmax=vmax, cbar_orientation=cbar_orientation)
 
     if s12 is True:
         ax.set_title(r'Stress 12 ('+str(ftr)+' Pa)')
         draw.tricontourf(model, SIG[:, 2]/ftr, ax, 'cool', lev=lev,
-                         vmin=vmin, vmax=vmax)
+                         vmin=vmin, vmax=vmax, cbar_orientation=cbar_orientation)
 
     if s22 is True:
         ax.set_title(r'Stress 22 ('+str(ftr)+' Pa)')
         draw.tricontourf(model, SIG[:, 1]/ftr, ax, 'autumn', lev=lev,
-                         vmin=vmin, vmax=vmax)
+                         vmin=vmin, vmax=vmax, cbar_orientation=cbar_orientation)
 
     if spmax is True:
         spmx = stress.principal_max(SIG[:, 0], SIG[:, 1], SIG[:, 2])
         ax.set_title(r'Stress Principal Max ('+str(ftr)+' Pa)')
         draw.tricontourf(model, spmx/ftr, ax, 'plasma', lev=lev,
-                         vmin=vmin, vmax=vmax)
+                         vmin=vmin, vmax=vmax, cbar_orientation=cbar_orientation)
 
     if spmin is True:
         spmn = stress.principal_min(SIG[:, 0], SIG[:, 1], SIG[:, 2])
         ax.set_title(r'Stress Principal Min ('+str(ftr)+' Pa)')
         draw.tricontourf(model, spmn/ftr, ax, 'viridis', lev=lev,
-                         vmin=vmin, vmax=vmax)
+                         vmin=vmin, vmax=vmax, cbar_orientation=cbar_orientation)
 
 
 def model_deformed_dyn(model, U, ax, magf=1, ele=False, name=None,
