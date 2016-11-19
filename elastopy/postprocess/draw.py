@@ -380,7 +380,7 @@ def tricontourf(model, sig, ax, cmap, lev, vmin=None, vmax=None):
     CS3 = ax.tricontour(xx, yy, triangles, zz, lev, colors='black')
     ax.clabel(CS3, fontsize=8, colors='k', fmt='%1.1f')
 
-    ax.plot(ccx, ccy, '-k')
+    # ax.plot(ccx, ccy, '-k')
 
     # # Change the colorbar range
     sm = plt.cm.ScalarMappable(cmap=cmap,
