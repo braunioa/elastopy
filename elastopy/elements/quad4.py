@@ -44,8 +44,8 @@ class Quad4(Element):
             self.at_boundary_line = model.bound_ele[index, 2]
 
         else:
-            self.side_at_boundary = None
-            self.at_boundary_line = None
+            self.side_at_boundary = []
+            self.at_boundary_line = []
 
     def shape_function(self, xez):
         """Create the basis function and evaluate them at xez coordinates
