@@ -370,6 +370,11 @@ def tricontourf(model, sig, ax, cmap, lev, vmin=None, vmax=None,
 
     triangles = np.asarray(triangles)
 
+    if vmin is None:
+        vmin = np.amin(sig)
+    if vmax is None:
+        vmax = np.amax(sig)
+
     CS2 = ax.tricontourf(xx, yy, triangles, zz, lev,
                          origin='lower',
                          cmap=cmap, antialiased=True,
