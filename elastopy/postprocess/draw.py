@@ -389,7 +389,7 @@ def tricontourf(model, sig, ax, cmap, lev, vmin=None, vmax=None,
     # # fake up the array of the scalar mappable. Urgh...
     sm._A = []
     cbar = plt.colorbar(sm, orientation=cbar_orientation)
-
+    this_is_ = 1000
 
 
 def tricontourf_dyn(model, sig, ax, cmap, lev, vmin=None, vmax=None):
