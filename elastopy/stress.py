@@ -93,3 +93,64 @@ def principal_min(s11, s22, s12):
         sp_min[i] = (s11[i]+s22[i])/2. - np.sqrt((s11[i] - s22[i])**2./2. +
                                                  s12[i]**2.)
     return sp_min
+
+def recovery_gauss(model, material, U, EPS0):
+    """Recovery stress at nodes from displacement
+
+    """
+    # initiate the arrays for element and global stress
+    sig = np.zeros(3)
+    SIG = np.zeros((model.nn, 3))
+
+    # extrapolation matrix
+    Q = np.array([[1 + np.sqrt(3)/2, -1/2, 1 - np.sqrt(3)/2, -1/2],
+                  [-1/2, 1 + np.sqrt(3)/2, -1/2, 1 - np.sqrt(3)/2],
+                  [1 - np.sqrt(3)/2, -1/2, 1 + np.sqrt(3)/2, -1/2],
+                  [-1/2, 1 - np.sqrt(3)/2, -1/2, 1 + np.sqrt(3)/2]])
+
+    for e, conn in enumerate(model.CONN):
+        element = constructor(e, model, material, EPS0)
+        dof = element.dof
+        xyz = element.xyz
+
+        # if there is no initial strain
+        if EPS0 is None:
+            eps0 = np.zeros(3)
+        else:
+            eps0 = EPS0[e]
+
+        E = element.E
+        nu = element.nu
+
+        C = c_matrix(E, nu)
+
+        u = U[dof]
+
+        # quadrature on the nodes coord in the isodomain
+        for n, xez in enumerate(element.XEZ/np.sqrt(3)):
+            _, dN_ei = element.shape_function(xez)
+            dJ, dN_xi, _ = element.jacobian(xyz, dN_ei)
+
+            # number of elements sharing a node
+            num_ele_shrg = (model.CONN == conn[n]).sum()
+
+            B = np.array([
+               [dN_xi[0, 0], 0, dN_xi[0, 1], 0, dN_xi[0, 2], 0,
+                dN_xi[0, 3], 0],
+               [0, dN_xi[1, 0], 0, dN_xi[1, 1], 0, dN_xi[1, 2], 0,
+                dN_xi[1, 3]],
+               [dN_xi[1, 0], dN_xi[0, 0], dN_xi[1, 1], dN_xi[0, 1],
+                dN_xi[1, 2], dN_xi[0, 2], dN_xi[1, 3], dN_xi[0, 3]]])
+
+            # sig = [sig_11 sig_22 sig_12] for each n node
+            sig_gp = C @ (B @ u - eps0)
+
+            sig_node = Q @ sig_gp
+
+            # dof 1 degree of freedom per node
+            d = int(dof[2*n]/2)
+
+            # unweighted average of stress at nodes
+            SIG[d, :] += sig_node/num_ele_shrg
+
+    return SIG
