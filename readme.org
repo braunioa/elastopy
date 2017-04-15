@@ -1,7 +1,7 @@
 * Introduction
 
 #+attr_html: :align center
-file:https://cloud.githubusercontent.com/assets/9167399/25065900/38b750a8-21ee-11e7-9a38-a4b1139e97a7.png
+[[https://cloud.githubusercontent.com/assets/9167399/25065900/38b750a8-21ee-11e7-9a38-a4b1139e97a7.png][file:https://cloud.githubusercontent.com/assets/9167399/25065900/38b750a8-21ee-11e7-9a38-a4b1139e97a7.png]]
 
 This package solves the linear elasticity assuming the plane stress constitutive model.
 The solution is obtained via the finite element method.
@@ -101,4 +101,4 @@ plotter.show()
 #+END_SRC
 
 #+attr_html: :align center
-file:https://cloud.githubusercontent.com/assets/9167399/25065912/6cbd66a8-21ee-11e7-895c-4e302a9315e6.png
+[[https://cloud.githubusercontent.com/assets/9167399/25065912/6cbd66a8-21ee-11e7-895c-4e302a9315e6.png][file:https://cloud.githubusercontent.com/assets/9167399/25065912/6cbd66a8-21ee-11e7-895c-4e302a9315e6.png]]
