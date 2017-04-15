@@ -1,19 +1,13 @@
 import numpy as np
-from elastopy import statics
-from elastopy import gmsh
-from elastopy import plotter
-from elastopy import data
+from elastopy import gmsh, Build, Material, statics, plotter
 
-mesh_name = 'patch'
+mesh_file = 'patch'
 
-model = gmsh.Parse(mesh_name)
+mesh = gmsh.Parse(mesh_file)
 
+model = Build(mesh)
 
-material = data.Collect()
-s = list(model.surf.keys())
-
-material.E[s[0]] = 1000
-material.nu[s[0]] = 0.3
+material = Material(E={9: 1000}, nu={9: 0.3})
 
 
 def body_forces(x1, x2, t=1):
@@ -28,14 +22,19 @@ def displacement_imposed(x1, x2):
     return {
         ('nodes', 0, 3, 7): [0.0, 0.0],
         ('nodes', 4, 6): [0.5, 0.0],
-        ('nodes', 1, 5, 2): [1.0, 0.0],
-    }
-
+        ('nodes', 1, 5, 2): [1.0, 0.0]}
 
 U, SIG = statics.solver(model, material, body_forces,
                         traction_imposed, displacement_imposed)
 
+<<<<<<< HEAD
 plotter.model(model, ele=True, ele_label=True, nodes_label=True)
 plotter.model_deformed(model, U, magf=0.1, ele=True)
+=======
+plotter.model(model, ele=True, nodes_label=True, edges_label=True,
+              ele_label=True)
+plotter.model_deformed(model, U, magf=0.1, ele=True)
+print(SIG[:, 0])
+>>>>>>> improv
 
 plotter.show()
