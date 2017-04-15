@@ -6,3 +6,4 @@
 /elastopy/*.py#
 /dist
 /elastopy.egg-info
+*.el
