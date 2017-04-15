@@ -1,6 +1,7 @@
 * Introduction
 
-[[https://cloud.githubusercontent.com/assets/9167399/25065900/38b750a8-21ee-11e7-9a38-a4b1139e97a7.png][elastopy-logo]]
+#+attr_html: :align center
+file:https://cloud.githubusercontent.com/assets/9167399/25065900/38b750a8-21ee-11e7-9a38-a4b1139e97a7.png
 
 This package solves the linear elasticity assuming the plane stress constitutive model.
 The solution is obtained via the finite element method.
@@ -42,7 +43,8 @@ plotter.model(model, ele=True, nodes_label=True, ele_label=True, edges_label=Tru
 plotter.show()
 #+END_SRC
 
-[[https://cloud.githubusercontent.com/assets/9167399/25065913/6cbdd7be-21ee-11e7-97fc-aa3f41cc3871.png][model]]
+#+attr_html: :align center
+file:https://cloud.githubusercontent.com/assets/9167399/25065913/6cbdd7be-21ee-11e7-97fc-aa3f41cc3871.png
 
 Next we define material parameters using the =Material= class which takes as argument keyword dictionaries where the key is the surface label,
 
@@ -96,4 +98,5 @@ print(np.round(SIG[:, 0], 2))   # s11 on all nodes
 plotter.show()
 #+END_SRC
 
-[[https://cloud.githubusercontent.com/assets/9167399/25065912/6cbd66a8-21ee-11e7-895c-4e302a9315e6.png][displ]]
+#+attr_html: :align center
+file:https://cloud.githubusercontent.com/assets/9167399/25065912/6cbd66a8-21ee-11e7-895c-4e302a9315e6.png
