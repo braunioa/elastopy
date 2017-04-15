@@ -14,7 +14,7 @@ def solver(model, material, body_force=None, traction_bc=None, displ_bc=None,
     SIG: stresses response of the system under the boundary conditions
 
     """
-    print('Starting statics solver at {}h '.format(t/3600), end='')
+    print('Starting statics solver at {:.3f}h '.format(t/3600), end='')
     K = np.zeros((model.ndof, model.ndof))
     Pb = np.zeros(model.ndof)
     Pt = np.zeros(model.ndof)

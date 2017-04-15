@@ -1,9 +1,5 @@
 import numpy as np
-from elastopy.model import Build
-from elastopy.mesh import gmsh
-from elastopy.material import Material
-from elastopy.solvers import statics
-from elastopy.postprocess import plotter
+from elastopy import gmsh, Build, Material, statics, plotter
 
 mesh_file = 'patch'
 
