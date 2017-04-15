@@ -44,7 +44,7 @@ plotter.show()
 #+END_SRC
 
 #+attr_html: :align center
-file:https://cloud.githubusercontent.com/assets/9167399/25065913/6cbdd7be-21ee-11e7-97fc-aa3f41cc3871.png
+[[https://cloud.githubusercontent.com/assets/9167399/25065913/6cbdd7be-21ee-11e7-97fc-aa3f41cc3871.png][file:https://cloud.githubusercontent.com/assets/9167399/25065913/6cbdd7be-21ee-11e7-97fc-aa3f41cc3871.png]]
 
 Next we define material parameters using the =Material= class which takes as argument keyword dictionaries where the key is the surface label,
 
@@ -79,6 +79,7 @@ def displ_bc(x1, x2):
 #+RESULTS:
 :RESULTS:
 :END:
+
 finally we call the statics solver
 
 #+BEGIN_SRC ipython :session :exports both :results output drawer
@@ -90,6 +91,7 @@ U, SIG = statics.solver(model, material, b_force,
 :RESULTS:
 Starting statics solver at 0.000h Solution completed!
 :END:
+
 We then proceed to process the results
 
 #+BEGIN_SRC ipython :session :exports both :results output drawer
