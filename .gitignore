@@ -7,3 +7,6 @@
 /dist
 /elastopy.egg-info
 *.el
+/img/
+/ipython-inline-images/
+/logo/

@@ -1,3 +1,109 @@
 * Introduction
 
+
+#+DOWNLOADED: file:C%3A/Users/Nasser/OneDrive/UNB/Projects/elastopy/logo/elastopy_logo.png @ 2017-04-15 11:51:29
+[[file:img/elastopy_logo_2017-04-15_11-51-29.png]]
+
 This package solves the linear elasticity assuming the plane stress constitutive model.
+The solution is obtained via the finite element method.
+
+The program input is a mesh (=.geo= and =.msh= files), material properties and boundary conditions. 
+The boundary conditions are create using python functions.
+The results obtained from the function =statics.solver()= are the nodal displacements and nodal stresses.
+
+* How to download
+
+#+BEGIN_SRC shell
+pip install elastopy
+#+END_SRC
+* How to use it
+
+In order to use you need the =.geo= and =.msh= from gmsh. See the test folder for an example.
+
+* Example of usage
+
+First we import the necessary classes and functions
+
+#+BEGIN_SRC ipython :session :exports both :results output drawer
+import numpy as np
+from elastopy import gmsh, Build, Material, statics, plotter
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+:END:
+
+Then we create the model by parsing the mesh file and instanciante the =Build= class.
+
+#+BEGIN_SRC ipython :session :exports both :results output drawer
+mesh_file = 'test/patch'
+mesh = gmsh.Parse(mesh_file)
+model = Build(mesh)
+
+plotter.model(model, ele=True, nodes_label=True, ele_label=True, edges_label=True)
+plotter.show()
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+[[file:ipython-inline-images/ob-ipython-3d9661d1828bab5d009903e9a681c166.png]]
+[[file:ipython-inline-images/ob-ipython-3d9661d1828bab5d009903e9a681c166.png]]
+:END:
+
+Next we define material parameters using the =Material= class which takes as argument keyword dictionaries where the key is the surface label,
+
+#+BEGIN_SRC ipython :session :exports both :results output drawer
+surf = list(model.surf.keys())
+material = Material(E={surf[0]: 1000}, nu={surf[0]: 0.3})
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+:END:
+
+Then we define body forces and boundary conditions as functions,
+
+#+BEGIN_SRC ipython :session :exports both :results output drawer
+def b_force(x1, x2, t=1):
+    return np.array([0.0,
+                     0.0])
+
+
+def trac_bc(x1, x2, t=1):
+    return {
+        ('line', 3): [-1, 0],
+        ('line', 1): [1, 0]}
+
+
+def displ_bc(x1, x2):
+    return {('node', 0): [0, 0],
+            ('node', 1): ['free', 0]}
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+:END:
+finally we call the statics solver
+
+#+BEGIN_SRC ipython :session :exports both :results output drawer
+U, SIG = statics.solver(model, material, b_force,
+                        trac_bc, displ_bc)
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+Starting statics solver at 0.000h Solution completed!
+:END:
+We then proceed to process the results
+
+#+BEGIN_SRC ipython :session :exports both :results output drawer
+plotter.model_deformed(model, U, magf=100, ele=True)
+print(np.round(SIG[:, 0], 2))   # s11 on all nodes
+plotter.show()
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+[ 1.4   1.18  1.22  1.    1.18  1.06  1.    1.    1.  ]
+[[file:ipython-inline-images/ob-ipython-7bf05efa9818f1fadc4efba093c421f4.png]]
+:END:
