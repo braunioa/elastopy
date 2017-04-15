@@ -2,11 +2,7 @@
 
 """
 import numpy as np
-<<<<<<< HEAD
-from elastopy.stiffness import c_matrix
-=======
 from elastopy.constructor import constructor
->>>>>>> improv
 
 
 def recovery(model, material, U, EPS0, t=1):
@@ -30,8 +26,7 @@ def recovery(model, material, U, EPS0, t=1):
 
         E = element.E
         nu = element.nu
-
-        C = c_matrix(E, nu, t)
+        C = element.c_matrix(E, nu, t)
 
         u = U[dof]
 
@@ -62,6 +57,17 @@ def recovery(model, material, U, EPS0, t=1):
 
     return SIG
 
+def c_matrix(E, nu):
+    """Build the element constitutive matrix
+    """
+    C = np.zeros((3, 3))
+    C[0, 0] = 1.0
+    C[1, 1] = 1.0
+    C[1, 0] = nu
+    C[0, 1] = nu
+    C[2, 2] = (1.0 - nu)/2.0
+    C = (E/(1.0-nu**2.0))*C
+    return C
 
 def principal_max(s11, s22, s12):
     """Compute the principal stress max

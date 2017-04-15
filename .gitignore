@@ -4,12 +4,3 @@
 /__pycache__/
 *.pyc
 /elastopy/#statics.py#
-<<<<<<< HEAD
-/__pycache__/
-elastopy/__pycache__/
-*.pyc
-elastopy/__pycache__/*.pyc
-/elastopy/__pycache__/*
-=======
-
->>>>>>> improv
