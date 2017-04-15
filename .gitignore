@@ -7,4 +7,5 @@
 /dist
 /elastopy.egg-info
 *.el
-
+/logo/
+/ipython-inline-images/ob-ipython-3d9661d1828bab5d009903e9a681c166.png
