@@ -47,7 +47,6 @@ plotter.show()
 #+RESULTS:
 :RESULTS:
 [[file:ipython-inline-images/ob-ipython-3d9661d1828bab5d009903e9a681c166.png]]
-[[file:ipython-inline-images/ob-ipython-3d9661d1828bab5d009903e9a681c166.png]]
 :END:
 
 Next we define material parameters using the =Material= class which takes as argument keyword dictionaries where the key is the surface label,
