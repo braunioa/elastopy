@@ -99,9 +99,8 @@ def recovery_gauss(model, material, U, EPS0):
 
     """
     # initiate the arrays for element and global stress
-    sig = np.zeros(3)
     SIG = np.zeros((model.nn, 3))
-
+    SIG2 = np.zeros((model.nn, 3))
     # extrapolation matrix
     Q = np.array([[1 + np.sqrt(3)/2, -1/2, 1 - np.sqrt(3)/2, -1/2],
                   [-1/2, 1 + np.sqrt(3)/2, -1/2, 1 - np.sqrt(3)/2],
@@ -121,7 +120,6 @@ def recovery_gauss(model, material, U, EPS0):
 
         E = element.E
         nu = element.nu
-
         C = c_matrix(E, nu)
 
         u = U[dof]
@@ -145,12 +143,12 @@ def recovery_gauss(model, material, U, EPS0):
             # sig = [sig_11 sig_22 sig_12] for each n node
             sig_gp = C @ (B @ u - eps0)
 
-            sig_node = Q @ sig_gp
-
-            # dof 1 degree of freedom per node
-            d = int(dof[2*n]/2)
-
+            # 1 degree of freedom per node
             # unweighted average of stress at nodes
-            SIG[d, :] += sig_node/num_ele_shrg
+            SIG[conn[n], :] += sig_gp/num_ele_shrg
 
-    return SIG
+        SIG2[conn, 0] = Q @ SIG[conn, 0]
+        SIG2[conn, 1] = Q @ SIG[conn, 1]
+        SIG2[conn, 2] = Q @ SIG[conn, 2]
+
+    return SIG2

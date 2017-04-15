@@ -228,3 +228,74 @@ def displ_animation(U, model, t_int, dt, magf=1, name='displacement.gif',
     ani = anime(frm, fig, t_int, interval=interval)
     ani.save(name, writer='imagemagick', bitrate=brate)
     plt.show()
+
+def stress_through_time(model, sig, node, t_int, dt, time_scale='day', ax=None, ylabel='',
+                        label='...', linestyle=None, marker=None, title=None):
+    """Plott solution at a specific node through time
+    
+    """
+    print('Plotting Stress through time at node {} ...'.format(node), end='')
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    if time_scale == 'day':
+        time_factor = 60*60*24
+    elif time_scale == 'hour':
+        time_factor = 60*60
+    else:
+        print('Time scale should be hour or day!')
+
+    # t_int in seconds
+    number_steps = int(t_int/dt)
+    t = np.linspace(0, t_int, number_steps+1)
+
+    ax.plot(t/time_factor, sig/1e6, label=label,
+            linestyle=linestyle, marker=marker)
+    ax.set_xlabel('Time ({})'.format(time_scale))
+    ax.set_ylabel(ylabel)
+    if title is not None:
+        ax.set_title(title)
+    ax.grid(linestyle='dotted', alpha=0.5) 
+    ax.legend()
+    plt.tight_layout()
+    
+    print('Done')
+
+
+def stress_along_y_at_time(model, sig, time, t_int, dt, time_scale='day',
+                           ax=None, x=0, label=None, marker=None, ylabel=None,
+                           ftr=1, linestyle=None):
+    print('Plotting solution at time {} through the y-axis ...'.format(time), end='')
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    if time_scale == 'day':
+        # (t_int/dt) is the number of steps
+        # (t_int/60*60*24) is the time interval in days
+        time_index = int((t_int/dt)/(t_int/(60*60*24))*time)
+    elif time_scale == 'hour':
+        time_index = int((t_int/dt)/(t_int/(60*60))*time)
+    else:
+        print('Time scale should be hour or day!')
+
+    nodes = np.where(np.round(model.XYZ[:, 0], 3) == x)[0]
+    y = model.XYZ[nodes, 1]
+
+    data = np.array(list(zip(y, sig[nodes, time_index])))
+
+    sorted_data = data[np.argsort(data[:, 0])]
+
+    # import os
+    # np.savetxt('gisele_solution_in_y.txt',
+    #            sorted_data,
+    #            fmt='%.4f', newline=os.linesep)
+
+    ax.plot(sorted_data[:, 1]/ftr, sorted_data[:, 0], label=label, marker=marker,
+            linestyle=linestyle)
+    ax.set_ylabel(r'$y (m)$')
+    ax.set_xlabel(ylabel)
+    ax.grid(linestyle='dotted', alpha=0.5)
+    ax.legend()
+    plt.tight_layout()
+    print('Done')    
+

@@ -8,6 +8,12 @@ import numpy as np
 class Quad4(Element):
     """Constructor of a 4-node quadrangle (TYPE 3) element
 
+    Args:
+        eid: element index
+        model: object with model parameters
+        material: object with material parameters
+        eps0: element inital strain array shape [3]
+
     """
     def __init__(self, eid, model, material, EPS0):
 
@@ -28,8 +34,11 @@ class Quad4(Element):
             print('Surface ', self.surf,
                   ' with no material assigned! (Default used)')
 
+        # create an initial strain due non mechanical effect
         if EPS0 is None:
             self.eps0 = np.zeros(3)
+        else:
+            self.eps0 = EPS0[eid]
 
         # check if its a boundary element
         if eid in model.bound_ele[:, 0]:
@@ -178,27 +187,28 @@ class Quad4(Element):
 
         return self.C
 
-    def load_body_vector(self, b_force, t=1):
+    def load_body_vector(self, b_force=None, t=1):
         """Build the element vector due body forces b_force
 
         """
         gauss_points = self.XEZ / np.sqrt(3.0)
 
         pb = np.zeros(8)
-        for gp in gauss_points:
-            N, dN_ei = self.shape_function(xez=gp)
-            dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
+        if b_force is not None:
+            for gp in gauss_points:
+                N, dN_ei = self.shape_function(xez=gp)
+                dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
 
-            x1, x2 = self.mapping(self.xyz)
+                x1, x2 = self.mapping(self.xyz)
 
-            pb[0] += N[0]*b_force(x1, x2, t)[0]*dJ
-            pb[1] += N[0]*b_force(x1, x2, t)[1]*dJ
-            pb[2] += N[1]*b_force(x1, x2, t)[0]*dJ
-            pb[3] += N[1]*b_force(x1, x2, t)[1]*dJ
-            pb[4] += N[2]*b_force(x1, x2, t)[0]*dJ
-            pb[5] += N[2]*b_force(x1, x2, t)[1]*dJ
-            pb[6] += N[3]*b_force(x1, x2, t)[0]*dJ
-            pb[7] += N[3]*b_force(x1, x2, t)[1]*dJ
+                pb[0] += N[0]*b_force(x1, x2, t)[0]*dJ
+                pb[1] += N[0]*b_force(x1, x2, t)[1]*dJ
+                pb[2] += N[1]*b_force(x1, x2, t)[0]*dJ
+                pb[3] += N[1]*b_force(x1, x2, t)[1]*dJ
+                pb[4] += N[2]*b_force(x1, x2, t)[0]*dJ
+                pb[5] += N[2]*b_force(x1, x2, t)[1]*dJ
+                pb[6] += N[3]*b_force(x1, x2, t)[0]*dJ
+                pb[7] += N[3]*b_force(x1, x2, t)[1]*dJ
 
         return pb
 
@@ -227,7 +237,7 @@ class Quad4(Element):
 
         return pe
 
-    def load_traction_vector(self, traction_bc, t=1):
+    def load_traction_vector(self, traction_bc=None, t=1):
         """Build element load vector due traction_bction boundary condition
 
         """
@@ -243,34 +253,35 @@ class Quad4(Element):
 
         pt = np.zeros(8)
 
-        # loop for specified boundary conditions
-        for key in traction_bc(1, 1).keys():
-            line = key[1]
+        if traction_bc is not None:
+            # loop for specified boundary conditions
+            for key in traction_bc(1, 1).keys():
+                line = key[1]
 
-            for ele_boundary_line, ele_side in zip(self.at_boundary_line,
-                                                   self.side_at_boundary):
-                # Check if this element is at the line with traction
-                if line == ele_boundary_line:
+                for ele_boundary_line, ele_side in zip(self.at_boundary_line,
+                                                       self.side_at_boundary):
+                    # Check if this element is at the line with traction
+                    if line == ele_boundary_line:
 
-                    # perform the integral with GQ
-                    for w in range(2):
-                        N, dN_ei = self.shape_function(xez=gp[ele_side, w])
-                        _, _, arch_length = self.jacobian(self.xyz, dN_ei)
-                        
-                        dL = arch_length[ele_side]
-                        x1, x2 = self.mapping(self.xyz)
+                        # perform the integral with GQ
+                        for w in range(2):
+                            N, dN_ei = self.shape_function(xez=gp[ele_side, w])
+                            _, _, arch_length = self.jacobian(self.xyz, dN_ei)
 
-                        pt[0] += N[0] * traction_bc(x1, x2, t)[key][0] * dL
-                        pt[1] += N[0] * traction_bc(x1, x2, t)[key][1] * dL
-                        pt[2] += N[1] * traction_bc(x1, x2, t)[key][0] * dL
-                        pt[3] += N[1] * traction_bc(x1, x2, t)[key][1] * dL
-                        pt[4] += N[2] * traction_bc(x1, x2, t)[key][0] * dL
-                        pt[5] += N[2] * traction_bc(x1, x2, t)[key][1] * dL
-                        pt[6] += N[3] * traction_bc(x1, x2, t)[key][0] * dL
-                        pt[7] += N[3] * traction_bc(x1, x2, t)[key][1] * dL
+                            dL = arch_length[ele_side]
+                            x1, x2 = self.mapping(self.xyz)
 
-                else:
-                    # Catch element that is not at boundary
-                    continue
+                            pt[0] += N[0] * traction_bc(x1, x2, t)[key][0] * dL
+                            pt[1] += N[0] * traction_bc(x1, x2, t)[key][1] * dL
+                            pt[2] += N[1] * traction_bc(x1, x2, t)[key][0] * dL
+                            pt[3] += N[1] * traction_bc(x1, x2, t)[key][1] * dL
+                            pt[4] += N[2] * traction_bc(x1, x2, t)[key][0] * dL
+                            pt[5] += N[2] * traction_bc(x1, x2, t)[key][1] * dL
+                            pt[6] += N[3] * traction_bc(x1, x2, t)[key][0] * dL
+                            pt[7] += N[3] * traction_bc(x1, x2, t)[key][1] * dL
+
+                    else:
+                        # Catch element that is not at boundary
+                        continue
 
         return pt

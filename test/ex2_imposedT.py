@@ -32,4 +32,5 @@ U, SIG = statics.solver(model, material, b_force,
 plotter.model(model, ele=True, nodes_label=True,
               ele_label=True, edges_label=True)
 plotter.model_deformed(model, U, magf=100, ele=True)
+plotter.stresses
 plotter.show()

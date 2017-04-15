@@ -1,4 +1,4 @@
-def dirichlet(K, F, model, displ_bc):
+def dirichlet(K, F, model, displ_bc=None):
     """Apply Dirichlet BC.
 
     .. note::
@@ -48,72 +48,107 @@ def dirichlet(K, F, model, displ_bc):
 
 
     """
-    for line in displ_bc(1, 1).keys():
-        if line[0] == 'line':
-            for n in range(len(model.nodes_in_bound_line[:, 0])):
-                if line[1] == model.nodes_in_bound_line[n, 0]:
-                    rx = displ_bc(1, 1)[line][0]
-                    ry = displ_bc(1, 1)[line][1]
+    if displ_bc is not None:
+        for line in displ_bc(1, 1).keys():
+            if isinstance(line, tuple) and line[0] == 'line':
+                for n in range(len(model.nodes_in_bound_line[:, 0])):
+                    if line[1] == model.nodes_in_bound_line[n, 0]:
+                        rx = displ_bc(1, 1)[line][0]
+                        ry = displ_bc(1, 1)[line][1]
 
-                    # nodes indexes on the element boundary line
+                        # nodes indexes on the element boundary line
 
-                    n1 = model.nodes_in_bound_line[n, 1]
-                    n2 = model.nodes_in_bound_line[n, 2]
+                        n1 = model.nodes_in_bound_line[n, 1]
+                        n2 = model.nodes_in_bound_line[n, 2]
 
-                    d1 = displ_bc(
-                        model.XYZ[n1, 0],
-                        model.XYZ[n1, 1])
+                        d1 = displ_bc(
+                            model.XYZ[n1, 0],
+                            model.XYZ[n1, 1])
 
-                    d2 = displ_bc(
-                        model.XYZ[n2, 0],
-                        model.XYZ[n2, 1])
+                        d2 = displ_bc(
+                            model.XYZ[n2, 0],
+                            model.XYZ[n2, 1])
 
-                    if rx != 'free':
-                        K[2 * n1, :] = 0.0
-                        K[2 * n2, :] = 0.0
-                        K[2 * n1, 2 * n1] = 1.0
-                        K[2 * n2, 2 * n2] = 1.0
-                        F[2 * n1] = d1[line][0]
-                        F[2 * n2] = d2[line][0]
+                        if rx != 'free' and rx != None:
+                            K[2 * n1, :] = 0.0
+                            K[2 * n2, :] = 0.0
+                            K[2 * n1, 2 * n1] = 1.0
+                            K[2 * n2, 2 * n2] = 1.0
+                            F[2 * n1] = d1[line][0]
+                            F[2 * n2] = d2[line][0]
 
-                    if ry != 'free':
-                        K[2 * n1 + 1, :] = 0.0
-                        K[2 * n2 + 1, :] = 0.0
-                        K[2 * n1 + 1, 2 * n1 + 1] = 1.0
-                        K[2 * n2 + 1, 2 * n2 + 1] = 1.0
-                        F[2 * n1 + 1] = d1[line][1]
-                        F[2 * n2 + 1] = d2[line][1]
+                        if ry != 'free' and ry != None:
+                            K[2 * n1 + 1, :] = 0.0
+                            K[2 * n2 + 1, :] = 0.0
+                            K[2 * n1 + 1, 2 * n1 + 1] = 1.0
+                            K[2 * n2 + 1, 2 * n2 + 1] = 1.0
+                            F[2 * n1 + 1] = d1[line][1]
+                            F[2 * n2 + 1] = d2[line][1]
+            elif isinstance(line, int):
+                for n in range(len(model.nodes_in_bound_line[:, 0])):
+                    if line == model.nodes_in_bound_line[n, 0]:
+                        rx = displ_bc(1, 1)[line][0]
+                        ry = displ_bc(1, 1)[line][1]
 
-        if line[0] == 'nodes' or line[0] == 'node':
+                        # nodes indexes on the element boundary line
 
-            rx = displ_bc(1, 1)[line][0]
-            ry = displ_bc(1, 1)[line][1]
+                        n1 = model.nodes_in_bound_line[n, 1]
+                        n2 = model.nodes_in_bound_line[n, 2]
 
-            for n in line[1:]:
-                if rx != 'free':
-                    K[2 * n, :] = 0.0
-                    K[2 * n, 2 * n] = 1.0
-                    F[2 * n] = rx
+                        d1 = displ_bc(
+                            model.XYZ[n1, 0],
+                            model.XYZ[n1, 1])
 
-                if ry != 'free':
-                    K[2 * n + 1, :] = 0.0
-                    K[2 * n + 1, 2 * n + 1] = 1.0
-                    F[2 * n + 1] = ry
+                        d2 = displ_bc(
+                            model.XYZ[n2, 0],
+                            model.XYZ[n2, 1])
 
-        # modify Linear system matrix and vector for imposed 0.0 displ_bc
-        if line[0] == 'support':
+                        if rx != 'free' and rx != None:
+                            K[2 * n1, :] = 0.0
+                            K[2 * n2, :] = 0.0
+                            K[2 * n1, 2 * n1] = 1.0
+                            K[2 * n2, 2 * n2] = 1.0
+                            F[2 * n1] = d1[line][0]
+                            F[2 * n2] = d2[line][0]
 
-            for n in line[1:]:
+                        if ry != 'free' and ry != None:
+                            K[2 * n1 + 1, :] = 0.0
+                            K[2 * n2 + 1, :] = 0.0
+                            K[2 * n1 + 1, 2 * n1 + 1] = 1.0
+                            K[2 * n2 + 1, 2 * n2 + 1] = 1.0
+                            F[2 * n1 + 1] = d1[line][1]
+                            F[2 * n2 + 1] = d2[line][1]
+
+            if isinstance(line, tuple) and (line[0] == 'nodes' or line[0] == 'node'):
+
                 rx = displ_bc(1, 1)[line][0]
                 ry = displ_bc(1, 1)[line][1]
-                if rx != 'free' or rx != 0:
-                    K[2 * n, :] = 0.0
-                    K[2 * n, 2 * n] = 1.0
-                    F[2 * n] = 0.0
 
-                if ry != 'free' or rx != 0:
-                    K[2 * n + 1, :] = 0.0
-                    K[2 * n + 1, 2 * n + 1] = 1.0
-                    F[2 * n + 1] = 0.0
+                for n in line[1:]:
+                    if rx != 'free':
+                        K[2 * n, :] = 0.0
+                        K[2 * n, 2 * n] = 1.0
+                        F[2 * n] = rx
+
+                    if ry != 'free':
+                        K[2 * n + 1, :] = 0.0
+                        K[2 * n + 1, 2 * n + 1] = 1.0
+                        F[2 * n + 1] = ry
+
+            # modify Linear system matrix and vector for imposed 0.0 displ_bc
+            if isinstance(line, tuple) and line[0] == 'support':
+
+                for n in line[1:]:
+                    rx = displ_bc(1, 1)[line][0]
+                    ry = displ_bc(1, 1)[line][1]
+                    if rx != 'free' and rx != 0:
+                        K[2 * n, :] = 0.0
+                        K[2 * n, 2 * n] = 1.0
+                        F[2 * n] = 0.0
+
+                    if ry != 'free' and rx != 0:
+                        K[2 * n + 1, :] = 0.0
+                        K[2 * n + 1, 2 * n + 1] = 1.0
+                        F[2 * n + 1] = 0.0
 
     return K, F
