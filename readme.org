@@ -1,0 +1,3 @@
+* Introduction
+
+This package solves the linear elasticity assuming the plane stress constitutive model.
