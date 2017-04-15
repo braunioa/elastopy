@@ -3,4 +3,6 @@
 /.projectile
 /__pycache__/
 *.pyc
-/elastopy/#statics.py#
+/elastopy/*.py#
+/dist
+/elastopy.egg-info
