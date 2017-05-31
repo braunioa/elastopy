@@ -70,7 +70,7 @@ def model_deformed(model, U, magf=1, ele=False, name=None, color='Tomato',
 
 def stresses(model, SIG, ftr=1, s11=False, s12=False, s22=False, spmax=False,
              spmin=False, dpi=100, name=None, lev=20, vmin=None, vmax=None,
-             cbar_orientation='vertical'):
+             cbar_orientation='vertical', title=''):
     """Plot stress with nodal stresses
 
     """
@@ -241,7 +241,9 @@ def displ_animation(U, model, t_int, dt, magf=1, name='displacement.gif',
     ani.save(name, writer='imagemagick', bitrate=brate)
     plt.show()
 
-def stress_through_time(model, sig, node, t_int, dt, time_scale='day', ax=None, ylabel='',
+
+def stress_through_time(model, sig, node, t_int, dt, time_scale='day',
+                        ax=None, ylabel='',
                         label='...', linestyle=None, marker=None, title=None):
     """Plott solution at a specific node through time
     
@@ -262,15 +264,13 @@ def stress_through_time(model, sig, node, t_int, dt, time_scale='day', ax=None, 
     t = np.linspace(0, t_int, number_steps+1)
 
     ax.plot(t/time_factor, sig/1e6, label=label,
-            linestyle=linestyle, marker=marker)
+            linestyle=linestyle, marker=marker, mfc='none', mew=.5)
     ax.set_xlabel('Time ({})'.format(time_scale))
     ax.set_ylabel(ylabel)
     if title is not None:
         ax.set_title(title)
-    ax.grid(linestyle='dotted', alpha=0.5) 
     ax.legend()
     plt.tight_layout()
-    
     print('Done')
 
 
@@ -302,12 +302,11 @@ def stress_along_y_at_time(model, sig, time, t_int, dt, time_scale='day',
     #            sorted_data,
     #            fmt='%.4f', newline=os.linesep)
 
-    ax.plot(sorted_data[:, 1]/ftr, sorted_data[:, 0], label=label, marker=marker,
-            linestyle=linestyle)
+    ax.plot(sorted_data[:, 1]/ftr, sorted_data[:, 0], label=label,
+            marker=marker,
+            linestyle=linestyle, mfc='none', mew=.5)
     ax.set_ylabel(r'$y (m)$')
     ax.set_xlabel(ylabel)
-    ax.grid(linestyle='dotted', alpha=0.5)
     ax.legend()
     plt.tight_layout()
-    print('Done')    
-
+    print('Done')
