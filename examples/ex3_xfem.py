@@ -1,10 +1,10 @@
 import numpy as np
 from elastopy import gmsh, Build, Material, statics, plotter
 
-mesh_file = 'patch'
+mesh_file = 'xfem'
 mesh = gmsh.Parse(mesh_file)
 model = Build(mesh)
-material = Material(E={9: 1000}, nu={9: 0.3})
+material = Material(E={0: 2e6}, nu={0: 0.3}, case='strain')
 
 
 def b_force(x1, x2, t=1):
