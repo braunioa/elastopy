@@ -24,10 +24,6 @@ def recovery(model, material, U, EPS0, t=1):
         else:
             eps0 = EPS0[e]
 
-        E = element.E
-        nu = element.nu
-        C = element.c_matrix(E, nu, t)
-
         u = U[dof]
 
         # quadrature on the nodes coord in the isodomain
@@ -37,6 +33,12 @@ def recovery(model, material, U, EPS0, t=1):
 
             # number of elements sharing a node
             num_ele_shrg = (model.CONN == conn[n]).sum()
+
+            if callable(element.E):
+                x1, x2 = element.mapping(element.xyz)
+                C = element.c_matrix(t, x1, x2)
+            else:
+                C = element.c_matrix(t)
 
             B = np.array([
                [dN_xi[0, 0], 0, dN_xi[0, 1], 0, dN_xi[0, 2], 0,
@@ -57,17 +59,6 @@ def recovery(model, material, U, EPS0, t=1):
 
     return SIG
 
-def c_matrix(E, nu):
-    """Build the element constitutive matrix
-    """
-    C = np.zeros((3, 3))
-    C[0, 0] = 1.0
-    C[1, 1] = 1.0
-    C[1, 0] = nu
-    C[0, 1] = nu
-    C[2, 2] = (1.0 - nu)/2.0
-    C = (E/(1.0-nu**2.0))*C
-    return C
 
 def principal_max(s11, s22, s12):
     """Compute the principal stress max
@@ -90,7 +81,7 @@ def principal_min(s11, s22, s12):
                                                  s12[i]**2.)
     return sp_min
 
-def recovery_gauss(model, material, U, EPS0):
+def recovery_gauss(model, material, U, EPS0, t=1):
     """Recovery stress at nodes from displacement
 
     """
@@ -114,16 +105,18 @@ def recovery_gauss(model, material, U, EPS0):
         else:
             eps0 = EPS0[e]
 
-        E = element.E
-        nu = element.nu
-        C = c_matrix(E, nu)
-
         u = U[dof]
 
         # quadrature on the nodes coord in the isodomain
         for n, xez in enumerate(element.XEZ/np.sqrt(3)):
             _, dN_ei = element.shape_function(xez)
             dJ, dN_xi, _ = element.jacobian(xyz, dN_ei)
+
+            if callable(element.E):
+                x1, x2 = element.mapping(element.xyz)
+                C = element.c_matrix(t, x1, x2)
+            else:
+                C = element.c_matrix(t)
 
             # number of elements sharing a node
             num_ele_shrg = (model.CONN == conn[n]).sum()
