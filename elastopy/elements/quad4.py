@@ -62,7 +62,7 @@ class Quad4(Element):
         Args:
             xez (array): position in the isoparametric coordinate xi, eta, zeta
 
-        Return:
+        Returns:
             N (array): shape functions
 
         """
@@ -99,16 +99,16 @@ class Quad4(Element):
         """Creates the Jacobian matrix of the mapping between an element
 
         Args:
-        xyz (array of floats): coordinates of element nodes in cartesian
-        coordinates
-        dN_ei (array of floats): derivative of shape functions
+            xyz (array of floats): coordinates of element nodes in cartesian
+                coordinates
+            dN_ei (array of floats): derivative of shape functions
 
-        Return:
-        det_jac (float): determinant of the jacobian matrix
-        dN_xi (array of floats): derivative of shape function
-        with respect to cartesian system
-        arch_length (array of floats): arch length for change of variable
-        in the line integral
+        Returns:
+            det_jac (float): determinant of the jacobian matrix
+            dN_xi (array of floats): derivative of shape function
+                with respect to cartesian system
+            arch_length (array of floats): arch length for change of variable
+                in the line integral
         """
         # Jac = [ x1_e1 x2_e1
         #         x1_e2 x2_e2 ]
@@ -146,14 +146,18 @@ class Quad4(Element):
         """
         k = np.zeros((8, 8))
 
-        C = self.c_matrix(t)
-
         gauss_points = self.XEZ / np.sqrt(3.0)
 
         for gp in gauss_points:
             _, dN_ei = self.shape_function(xez=gp)
             dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
 
+            if callable(self.E):
+                x1, x2 = self.mapping(self.xyz)
+                C = self.c_matrix(t, x1, x2)
+            else:
+                C = self.c_matrix(t)
+                
             B = np.array([
                 [dN_xi[0, 0], 0, dN_xi[0, 1], 0, dN_xi[0, 2], 0,
                  dN_xi[0, 3], 0],
@@ -171,19 +175,23 @@ class Quad4(Element):
 
         """
         return None
-        
 
-    def c_matrix(self, t=1):
+    def c_matrix(self, t=1, x1=1, x2=1):
         """Build the element constitutive matrix
 
         """
+        if callable(self.E):
+            E = self.E(x1, x2)
+        else:
+            E = self.E
+
         self.C = np.zeros((3, 3))
         self.C[0, 0] = 1.0
         self.C[1, 1] = 1.0
         self.C[1, 0] = self.nu
         self.C[0, 1] = self.nu
         self.C[2, 2] = (1.0 - self.nu)/2.0
-        self.C = (self.E/(1.0 - self.nu**2.0))*self.C
+        self.C = (E/(1.0 - self.nu**2.0))*self.C
 
         return self.C
 
