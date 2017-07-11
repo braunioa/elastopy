@@ -15,19 +15,22 @@ class Build(object):
 
     Args:
         mesh (object): object containing mesh data
-        zerolevelset (optional): mask array with -1, 1 or any other
-            value which zero level set defines discontinuity interface
+        zerolevelset (optional): object with zero level set
+            definition created with the class:
+                elastopy.xfem.zerolevelset.Create()
 
     Attributes:
-        mesh attributes
+        mesh attributes from elastopy.mesh.gmsh.Parse() object
+        discontinuity_elements (list): elements cut by the discontinuity
         enriched_elements (list): elements that are enriched
+        enriched_nodes (numpy array): enriched nodes
 
     """
     def __init__(self, mesh, zerolevelset=None):
         # copy attributes from mesh object
         self.__dict__ = mesh.__dict__.copy()
 
-        self.enriched_elements = []
+        self.discontinuity_elements = []
         if zerolevelset is not None:
             # phi shape (nn, ) with signed distance value
             phi = levelset.distance(zerolevelset.mask_ls,
@@ -41,9 +44,22 @@ class Build(object):
                         phi[conn] > 0):
                     pass
                 else:
-                    self.enriched_elements.append(e)
+                    self.discontinuity_elements.append(e)
 
+        enriched_nodes = np.array([], dtype='int')
+        for e in self.discontinuity_elements:
+            enriched_nodes = np.append(enriched_nodes,
+                                       self.CONN[e])
 
+        self.enriched_nodes = np.unique(enriched_nodes)
+        
+        self.enriched_elements = []
+        for e, conn in enumerate(self.CONN):
+            # check if any enriched node is in conn
+            if np.any(np.in1d(self.enriched_nodes, conn)):
+                self.enriched_elements.append(e)
+                
+        
 if __name__ == '__main__':
     class Mesh():
         pass
@@ -57,5 +73,9 @@ if __name__ == '__main__':
     z_ls = Create(func, [0, 1], [0, 1], num_div=50)
 
     model = Build(mesh, zerolevelset=z_ls)
+    # print(model.discontinuity_elements)
+    # [0]
+    # print(model.enriched_nodes)
+    # [ 0  1  2  3]
     # print(model.enriched_elements)
     # [0]
