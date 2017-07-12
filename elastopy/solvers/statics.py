@@ -15,10 +15,10 @@ def solver(model, material, body_force=None, traction_bc=None, displ_bc=None,
 
     """
     print('Starting statics solver at {:.3f}h '.format(t/3600), end='')
-    K = np.zeros((model.ndof, model.ndof))
-    Pb = np.zeros(model.ndof)
-    Pt = np.zeros(model.ndof)
-    Pe = np.zeros(model.ndof)
+    K = np.zeros((model.num_dof, model.num_dof))
+    Pb = np.zeros(model.num_dof)
+    Pt = np.zeros(model.num_dof)
+    Pe = np.zeros(model.num_dof)
 
     for eid, type in enumerate(model.TYPE):
         element = constructor(eid, model, material, EPS0)

@@ -98,22 +98,23 @@ class Parse(object):
         self.XYZ = np.array(list(XYZ.values()))
         self.CONN = np.array(list(CONN.values()))
         self.TYPE = np.array(TYPE)
-        self.ne = len(CONN)
-        self.nn = len(XYZ)
+        self.num_ele = len(CONN)
+        self.num_nodes = len(XYZ)
 
         # DEPENDS ON ELEMENT TYPE!
         # DOF = [[dof1_e1, dof2_e1, ... dof8_e1]
         #        [dof1_e2, dof2_e2, ... dof8_e2]]
-        DOF = []
+        self.DOF = []
         for e, conn in enumerate(self.CONN):
-            DOF.append([2 * conn[0], 2 * conn[0] + 1,
-                        2 * conn[1], 2 * conn[1] + 1,
-                        2 * conn[2], 2 * conn[2] + 1,
-                        2 * conn[3], 2 * conn[3] + 1])
-        self.DOF = np.array(DOF)
+            self.DOF.append([2 * conn[0], 2 * conn[0] + 1,
+                             2 * conn[1], 2 * conn[1] + 1,
+                             2 * conn[2], 2 * conn[2] + 1,
+                             2 * conn[3], 2 * conn[3] + 1])
+        # Use lists so the number of dof for each element can vary
+        # self.DOF = np.array(DOF)
 
         # Number of total degree of freedom
-        self.ndof = 2*self.nn
+        self.num_dof = 2*self.num_nodes
 
         # [ele side_of_ele_at_bound bound_line]
         bound_ele = []

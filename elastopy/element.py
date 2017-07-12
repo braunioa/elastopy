@@ -14,6 +14,7 @@ class Element(object):
         self.conn = model.CONN[eid]
         self.xyz = model.XYZ[self.conn]
         self.dof = model.DOF[eid]
+        self.num_std_dof = 2*len(self.conn)
         self.surf = model.surf_of_ele[eid]
 
         self.id_m = np.ix_(self.dof, self.dof)

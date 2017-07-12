@@ -21,16 +21,18 @@ class Quad4Enr(Quad4):
         # initialize Quad4 standard
         super().__init__(eid, model, material, EPS0)
 
-        self.enr_nodes = []
-        for n in model.enriched_nodes:
-            if n in self.conn:
-                self.enr_nodes.append(n)
+        self.enriched_nodes = np.intersect1d(model.enriched_nodes, self.conn)
+        self.phi = model.PHI[self.conn]
+        self.num_enr_nodes = len(self.enriched_nodes)
+        self.num_enr_dof = 2*self.num_enr_nodes
 
     def stiffness_matrix(self, t=1):
         """Build the enriched element stiffness matrix
 
         """
-        k = np.zeros((8, 8))
+        kuu = np.zeros((self.num_std_dof, self.num_std_dof))
+        kaa = np.zeros((self.num_enr_dof, self.num_enr_dof))
+        kua = np.zeros((self.num_std_dof, self.num_enr_dof))
 
         gauss_points = self.XEZ / np.sqrt(3.0)
 
