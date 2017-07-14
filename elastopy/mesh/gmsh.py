@@ -19,12 +19,15 @@ class Parse(object):
     """Parse the .geo and .msh file into dictionaries or lists
 
     Attributes:
-
+        bound_ele (list): [ele, side_of_ele_at_bound, bound_line]
+        name (std): file name is assigned as model name
 
     """
     def __init__(self, filename):
         geo_path = os.path.join(filename+'.geo')
         geo_file = open(geo_path, 'r')
+
+        self.name = filename
 
         # physical_line_tag: line_tag
         self.physical_line = {}
@@ -120,16 +123,12 @@ class Parse(object):
         bound_ele = []
         for e, conn in enumerate(self.CONN):
             for l, n1, n2 in self.nodes_in_bound_line:
-
                 if np.all([n1, n2] == self.CONN[e, 0:2]):
                     bound_ele.append([e, 0, l])
-
                 if np.all([n1, n2] == self.CONN[e, 1:3]):
                     bound_ele.append([e, 1, l])
-
                 if np.all([n1, n2] == self.CONN[e, 2:4]):
                     bound_ele.append([e, 2, l])
-
                 if np.all([n1, n2] == self.CONN[e, ::-3]):
                     bound_ele.append([e, 3, l])
 

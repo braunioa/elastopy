@@ -1,10 +1,10 @@
-from elastopy import boundary
-from elastopy import stress
-from elastopy.constructor import constructor
+from .. import boundary
+from .. import stress
+from ..constructor import constructor
 import numpy as np
 
 
-def solver(model, material, body_force=None, traction_bc=None, displ_bc=None,
+def solver(model, body_force=None, traction_bc=None, displ_bc=None,
            EPS0=None, t=1):
     """Solver for the elastostatics problem
 
@@ -21,7 +21,7 @@ def solver(model, material, body_force=None, traction_bc=None, displ_bc=None,
     Pe = np.zeros(model.num_dof)
 
     for eid, type in enumerate(model.TYPE):
-        element = constructor(eid, model, material, EPS0)
+        element = constructor(eid, model, EPS0)
 
         k = element.stiffness_matrix(t)
         pb = element.load_body_vector(body_force, t)
@@ -39,6 +39,7 @@ def solver(model, material, body_force=None, traction_bc=None, displ_bc=None,
 
     U = np.linalg.solve(Km, Pm)
 
-    SIG = stress.recovery_gauss(model, material, U, EPS0)
+    SIG = 0
+    # SIG = stress.recovery_gauss(model, U, EPS0)
     print('Solution completed!')
     return U, SIG

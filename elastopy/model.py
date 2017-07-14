@@ -7,7 +7,7 @@ The structure model has all attributes from the mesh object.
 """
 import numpy as np
 import levelset
-from elastopy.xfem.zerolevelset import Create
+from .xfem.zerolevelset import Create
 
 
 class Build(object):
@@ -47,12 +47,19 @@ class Build(object):
         discontinuity_elements (list): elements cut by the discontinuity
         enriched_elements (list): elements that are enriched
         enriched_nodes (numpy array): enriched nodes
+        num_enr_dof (int): number of enriched dofs for whole model
+        num_std_dof (int): number of standard dofs for whole model
         
     """
-    def __init__(self, mesh, zerolevelset=None):
+    def __init__(self, mesh, material=None, zerolevelset=None):
         # copy attributes from mesh object
         self.__dict__ = mesh.__dict__.copy()
 
+        if material is not None:
+            # aggregate material object as a model instance
+            self.material = material
+
+        self.enriched_elements = []
         # define if there will be enrichment
         if zerolevelset is not None:
             self.discontinuity_elements = []
@@ -78,7 +85,6 @@ class Build(object):
 
             # Update global DOF tags 
             max_dof_id = np.max(self.DOF) + 1  # +1 to start the count enr dofs
-            self.enriched_elements = []
             for e, conn in enumerate(self.CONN):
                 # check if any enriched node is in conn
                 if np.any(np.in1d(self.enriched_nodes, conn)):
@@ -91,10 +97,14 @@ class Build(object):
                         ind, = np.where(self.enriched_nodes == n)[0]
                         self.DOF[e].append(ind*2 + max_dof_id)
                         self.DOF[e].append(ind*2 + max_dof_id +1)
-
+                        
             # add 2 new dofs for each enriched node
             self.num_dof += 2*len(self.enriched_nodes)
-        
+
+            # total number of enriched dofs for whole model
+            self.num_enr_dof = 2*len(self.enriched_nodes)
+            self.num_std_dof = self.num_dof - self.num_enr_dof
+
         
         
 if __name__ == '__main__':

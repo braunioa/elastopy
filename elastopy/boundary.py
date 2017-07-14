@@ -1,7 +1,9 @@
+"""Apply the boundary conditions to matrices and vectors"""
+
 def dirichlet(K, F, model, displ_bc=None):
     """Apply Dirichlet BC.
 
-    .. note::
+    Note:
 
         How its done:
 
@@ -44,8 +46,6 @@ def dirichlet(K, F, model, displ_bc=None):
     Returns:
         K (2nd order array), B (1st order array): Modified stiffness matrix
         and vector.
-
-
 
     """
     if displ_bc is not None:

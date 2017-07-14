@@ -1,11 +1,11 @@
 """Constructs the correct element object
 
 """
-from elastopy.elements.quad4 import Quad4
-from elastopy.elements.quad4enr import Quad4Enr
+from .elements.quad4 import Quad4
+from .elements.quad4enr import Quad4Enr
 
 
-def constructor(eid, model, material, EPS0):
+def constructor(eid, model, EPS0=None):
     """Function that constructs the correct element
 
     """
@@ -13,8 +13,8 @@ def constructor(eid, model, material, EPS0):
 
     if type == 3:
         if eid in model.enriched_elements:
-            return Quad4Enr(eid, model, material, EPS0)
+            return Quad4Enr(eid, model, EPS0)
         else:
-            return Quad4(eid, model, material, EPS0)
+            return Quad4(eid, model, EPS0)
     else:
         raise Exception('Element not implemented yet!')

@@ -1,22 +1,49 @@
 """Module for quad element with 4 nodes - type 3 in gmsh
 
 """
-from elastopy.element import Element
+from ..element import Element
 import numpy as np
 
 
 class Quad4(Element):
     """Constructor of a 4-node quadrangle (TYPE 3) element
 
+    Attributes:
+        at_boundary_line (list): boundary line tag in which this element is
+        side_at_boundary (list): side of the element at the boundary line.
+        nodes_in_ele_bound (dict): element side and nodes at this side
+        E (float or callable): elastic modulus of this element
+        nu (floaf): Poisson's ration of this element
+        eps0 (numpy array): shape (3,) initial strain vector (s11, s22, s12)
+        XEZ (numpy array): shape (4, 2): coordinates of nodes in isoparametric
+            domain
+
+    Example:
+        For this list values:
+            >>> model.nodes_in_bound_line = [[0 0 1]
+                                             [0 1 4]
+                                             [0 4 5]
+                                             [1 5 6]
+                                             [2 6 7]
+                                             [2 7 2]
+                                             [2 2 3]
+                                             [3 3 0]]
+            >>> conn = [[4, 5, 6, 7]]  # connectivity of this element
+            >>> side_at_boundary = [0, 1, 2]  # ele_side1, ele_side2 ...
+            >>> at_boundary_line = [0, 1, 2]  # physical_line1, ...
+            >>> nodes_in_ele_bound = {0: [0, 4, 5], 1: [1, 5, 6], 2: [2, 6, 7]}
+
+        Element side 0 (bottom) is at boundary physical line with tag 0.
+        The list nodes_in_ele_bound format is [ele_side, node1, node2].
+        So, this element side 0 has the nodes 4 and 5 (global tag)
+
     Args:
         eid: element index
         model: object with model parameters
-        material: object with material parameters
-        eps0: element inital strain array shape [3]
+        EPS0: element inital strain array shape [3]
 
     """
-    def __init__(self, eid, model, material, EPS0):
-
+    def __init__(self, eid, model, EPS0):
         super().__init__(eid, model)
 
         # Nodal coordinates in the natural domain (isoparametric coordinates)
@@ -26,8 +53,8 @@ class Quad4(Element):
                              [-1.0, 1.0]])
 
         try:
-            self.E = material.E[self.surf]
-            self.nu = material.nu[self.surf]
+            self.E = model.material.E[self.surf]
+            self.nu = model.material.nu[self.surf]
         except AttributeError:
             print('E and nu must be defined for all surfaces! (Default used)')
         except KeyError:

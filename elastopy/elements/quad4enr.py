@@ -1,8 +1,8 @@
-"""Module for qmodel, material, EPS0uad element with 4 nodes - type 3 in gmsh
+"""Module for enriched quad element with 4 nodes - type 3 in gmsh
 
 """
-from elastopy.elements.quad4 import Quad4
 import numpy as np
+from .quad4 import Quad4
 
 
 class Quad4Enr(Quad4):
@@ -13,13 +13,19 @@ class Quad4Enr(Quad4):
     Args:
         eid: element index
         model: object with model parameters
-        material: object with material parameters
         eps0: element inital strain array shape [3]
 
+    Attributes:
+        enriched_nodes (list): list of enriched nodes for this element
+        phi (numpy array): nodal value for the signed distance function
+            of this element
+        num_enr_nodes (int): number of enriched nodes of this element
+        num_enr_dof (int): number of enriched degree`s of freedom in this
+            element.
     """
-    def __init__(self, eid, model, material, EPS0):
+    def __init__(self, eid, model, EPS0):
         # initialize Quad4 standard
-        super().__init__(eid, model, material, EPS0)
+        super().__init__(eid, model, EPS0)
 
         self.enriched_nodes = np.intersect1d(model.enriched_nodes, self.conn)
         self.phi = model.PHI[self.conn]
