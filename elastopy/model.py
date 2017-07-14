@@ -34,7 +34,8 @@ class Build(object):
 
         where, 16 = 2*(0) + 16 and 21 = 2*(2) + 16 + {1}, the number in
         parenthesis is the index of the node tag in the enriched_nodes list
-        and the number in {} is the additional dof for the 2d mechanics problem.
+        and the number in {} is the additional dof for the 2d mechanics
+        problem.
 
     Args:
         mesh (object): object containing mesh data
@@ -49,19 +50,29 @@ class Build(object):
         enriched_nodes (numpy array): enriched nodes
         num_enr_dof (int): number of enriched dofs for whole model
         num_std_dof (int): number of standard dofs for whole model
-        
+        xfem (boolean): indicates if xfem is used
+        PHI (numpy array): shape (nn, ) signed distance function from the zero
+            level set contour to mesh nodes.
+        material (obj): aggregation
+        zerolevelset (obj): aggregation
+
     """
     def __init__(self, mesh, material=None, zerolevelset=None):
         # copy attributes from mesh object
         self.__dict__ = mesh.__dict__.copy()
 
+        self.xfem = False
+
         if material is not None:
             # aggregate material object as a model instance
             self.material = material
 
+        self.enriched_nodes = np.array([], dtype='int')
         self.enriched_elements = []
         # define if there will be enrichment
         if zerolevelset is not None:
+            self.xfem = True
+            self.zerolevelset = zerolevelset
             self.discontinuity_elements = []
             # self.PHI shape (nn, ) with signed distance value
             self.PHI = levelset.distance(zerolevelset.mask_ls,
@@ -77,13 +88,12 @@ class Build(object):
                 else:
                     self.discontinuity_elements.append(e)
 
-            enriched_nodes = np.array([], dtype='int')
             for e in self.discontinuity_elements:
-                enriched_nodes = np.append(enriched_nodes,
-                                           self.CONN[e])
-            self.enriched_nodes = np.unique(enriched_nodes)
+                self.enriched_nodes = np.append(self.enriched_nodes,
+                                                self.CONN[e])
+            self.enriched_nodes = np.unique(self.enriched_nodes)
 
-            # Update global DOF tags 
+            # Update global DOF tags
             max_dof_id = np.max(self.DOF) + 1  # +1 to start the count enr dofs
             for e, conn in enumerate(self.CONN):
                 # check if any enriched node is in conn
@@ -96,8 +106,8 @@ class Build(object):
                         # enriched nodes list
                         ind, = np.where(self.enriched_nodes == n)[0]
                         self.DOF[e].append(ind*2 + max_dof_id)
-                        self.DOF[e].append(ind*2 + max_dof_id +1)
-                        
+                        self.DOF[e].append(ind*2 + max_dof_id + 1)
+
             # add 2 new dofs for each enriched node
             self.num_dof += 2*len(self.enriched_nodes)
 
@@ -105,8 +115,7 @@ class Build(object):
             self.num_enr_dof = 2*len(self.enriched_nodes)
             self.num_std_dof = self.num_dof - self.num_enr_dof
 
-        
-        
+
 if __name__ == '__main__':
     class Mesh():
         pass

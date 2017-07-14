@@ -32,12 +32,15 @@ class Create(object):
         ls = function(self.grid_x, self.grid_y)
         self.mask_ls = ls/abs(ls)
 
+        # define material parameters
+        self.region = [-1, 1]
+
 
 if __name__ == '__main__':
     def func(x, y):
         return (x - 2)**2 + (y - 2)**2 - 1.8**2
     z_ls = Create(func, [0, 2], [0, 2], num_div=3)
-    print(z_ls.mask_ls)
+    # print(z_ls.mask_ls)
     # [[ 1.  1.  1.]
     #  [ 1. -1. -1.]
     #  [ 1. -1. -1.]]

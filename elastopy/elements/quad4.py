@@ -12,11 +12,17 @@ class Quad4(Element):
         at_boundary_line (list): boundary line tag in which this element is
         side_at_boundary (list): side of the element at the boundary line.
         nodes_in_ele_bound (dict): element side and nodes at this side
-        E (float or callable): elastic modulus of this element
+        E (float or callable or list): elastic modulus of this element, if
+            float is constant for element (which is in a surface), if
+            callable is a function that will be evaluated when integrating,
+            if list is a float for each node in element defined by the sign of
+            the phi array (signed distance from zero level set).
         nu (floaf): Poisson's ration of this element
         eps0 (numpy array): shape (3,) initial strain vector (s11, s22, s12)
         XEZ (numpy array): shape (4, 2): coordinates of nodes in isoparametric
             domain
+        enriched_nodes (list): nodes that are enriched, if None results in
+            empty list
 
     Example:
         For this list values:
@@ -53,8 +59,15 @@ class Quad4(Element):
                              [-1.0, 1.0]])
 
         try:
-            self.E = model.material.E[self.surf]
-            self.nu = model.material.nu[self.surf]
+            if model.xfem:
+                # In this case self.E will be
+                self.E = [model.material.E[np.sign(model.PHI[i])]
+                          for i in self.conn]
+                self.nu = [model.material.nu[np.sign(model.PHI[i])]
+                           for i in self.conn]
+            else:
+                self.E = model.material.E[self.surf]
+                self.nu = model.material.nu[self.surf]
         except AttributeError:
             print('E and nu must be defined for all surfaces! (Default used)')
         except KeyError:
@@ -69,19 +82,36 @@ class Quad4(Element):
 
         # check if its a boundary element
         if eid in model.bound_ele[:, 0]:
-
             # index where bound_ele refers to this element
             index = np.where(model.bound_ele[:, 0] == eid)[0]
-
             # side of the element at the boundary
             self.side_at_boundary = model.bound_ele[index, 1]
-
             # boundary line where the element side share interface
             self.at_boundary_line = model.bound_ele[index, 2]
-
         else:
             self.side_at_boundary = []
             self.at_boundary_line = []
+
+        # use this in traction boundary condition
+        # element_side, node 1 and node 2 in local tag
+        # side 0 is bottom
+        self.local_nodes_in_side = {0: [0, 1],
+                                    1: [1, 2],
+                                    2: [2, 3],
+                                    3: [3, 1]}
+
+        # TODO: make this better
+        # 1. go over each element side and the correspondent boundary line
+        # 2. find the nodes in the same line using model.nodes_in_bound_line
+        # 3. loop in model.nodes_in_bound_line
+        # 4. check if the node is in this element
+        self.nodes_in_ele_bound = {}
+        for line, ele_side in zip(self.at_boundary_line,
+                                  self.side_at_boundary):
+            n_ = model.nodes_in_bound_line
+            for l, n1, n2 in n_[np.where(n_[:, 0] == line)]:
+                if n1 in self.conn and n2 in self.conn:
+                    self.nodes_in_ele_bound[ele_side] = [ele_side, n1, n2]
 
     def shape_function(self, xez):
         """Create the basis function and evaluate them at xez coordinates
@@ -184,7 +214,7 @@ class Quad4(Element):
                 C = self.c_matrix(t, x1, x2)
             else:
                 C = self.c_matrix(t)
-                
+
             B = np.array([
                 [dN_xi[0, 0], 0, dN_xi[0, 1], 0, dN_xi[0, 2], 0,
                  dN_xi[0, 3], 0],
@@ -203,22 +233,29 @@ class Quad4(Element):
         """
         return None
 
-    def c_matrix(self, t=1, x1=1, x2=1):
+    def c_matrix(self, t=1, x1=1, x2=1, n=None):
         """Build the element constitutive matrix
 
         """
         if callable(self.E):
             E = self.E(x1, x2)
+        elif type(self.E) is list:
+            E = self.E[n]
         else:
             E = self.E
+
+        if type(self.nu) is list:
+            nu = self.nu[n]
+        else:
+            nu = self.nu
 
         self.C = np.zeros((3, 3))
         self.C[0, 0] = 1.0
         self.C[1, 1] = 1.0
-        self.C[1, 0] = self.nu
-        self.C[0, 1] = self.nu
-        self.C[2, 2] = (1.0 - self.nu)/2.0
-        self.C = (E/(1.0 - self.nu**2.0))*self.C
+        self.C[1, 0] = nu
+        self.C[0, 1] = nu
+        self.C[2, 2] = (1.0 - nu)/2.0
+        self.C = (E/(1.0 - nu**2.0))*self.C
 
         return self.C
 

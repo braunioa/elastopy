@@ -21,6 +21,9 @@ class Parse(object):
     Attributes:
         bound_ele (list): [ele, side_of_ele_at_bound, bound_line]
         name (std): file name is assigned as model name
+        DOF (list of list): list of degree's of freedom (dof) indexes for
+            each element    
+        nodal_DOF (list of list): list of dof for each node
 
     """
     def __init__(self, filename):
@@ -109,12 +112,16 @@ class Parse(object):
         #        [dof1_e2, dof2_e2, ... dof8_e2]]
         self.DOF = []
         for e, conn in enumerate(self.CONN):
-            self.DOF.append([2 * conn[0], 2 * conn[0] + 1,
-                             2 * conn[1], 2 * conn[1] + 1,
-                             2 * conn[2], 2 * conn[2] + 1,
-                             2 * conn[3], 2 * conn[3] + 1])
+            self.DOF.append([2*conn[0], 2*conn[0] + 1,
+                             2*conn[1], 2*conn[1] + 1,
+                             2*conn[2], 2*conn[2] + 1,
+                             2*conn[3], 2*conn[3] + 1])
         # Use lists so the number of dof for each element can vary
         # self.DOF = np.array(DOF)
+
+        self.nodal_DOF = []
+        for n, xyz in enumerate(self.XYZ):
+            self.nodal_DOF.append([n*2, n*2+1])
 
         # Number of total degree of freedom
         self.num_dof = 2*self.num_nodes
