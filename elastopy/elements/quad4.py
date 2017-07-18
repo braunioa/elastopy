@@ -145,12 +145,33 @@ class Quad4(Element):
 
         return self.N, self.dN_ei
 
-    def mapping(self, xyz):
+    def mapping(self, N, xyz):
         """maps from cartesian to isoparametric.
 
         """
-        x1, x2 = self.N @ xyz
+        x1, x2 = N @ xyz
         return x1, x2
+
+    def local_node_index(self, n):
+        """Returns local index from global node index
+
+        Args:
+            n (int): global index value for node
+
+        Returns:
+            ind (int) local index
+
+        Example:
+            For: conn = [4, 5, 6, 7], then
+
+            >>> local_index(4)
+            0
+            >>> local_index(6)
+            2
+
+        """
+        ind = np.where(self.conn == n)[0][0]
+        return ind
 
     def jacobian(self, xyz, dN_ei):
         """Creates the Jacobian matrix of the mapping between an element
@@ -179,7 +200,7 @@ class Quad4(Element):
         jac_inv = np.linalg.inv(Jac)
 
         # Using Chain rule,
-        # N_xi = N_eI * eI_xi (2x8 array)
+        # N_xi = N_eI * eI_xi (2x4 array)
         dN_xi = np.zeros((2, 4))
         dN_xi[0, :] = (dN_ei[0, :]*jac_inv[0, 0] +
                        dN_ei[1, :]*jac_inv[0, 1])
@@ -210,7 +231,7 @@ class Quad4(Element):
             dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
 
             if callable(self.E):
-                x1, x2 = self.mapping(self.xyz)
+                x1, x2 = self.mapping(N, self.xyz)
                 C = self.c_matrix(t, x1, x2)
             else:
                 C = self.c_matrix(t)
@@ -271,7 +292,7 @@ class Quad4(Element):
                 N, dN_ei = self.shape_function(xez=gp)
                 dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
 
-                x1, x2 = self.mapping(self.xyz)
+                x1, x2 = self.mapping(N, self.xyz)
 
                 pb[0] += N[0]*b_force(x1, x2, t)[0]*dJ
                 pb[1] += N[0]*b_force(x1, x2, t)[1]*dJ
@@ -341,7 +362,7 @@ class Quad4(Element):
                             _, _, arch_length = self.jacobian(self.xyz, dN_ei)
 
                             dL = arch_length[ele_side]
-                            x1, x2 = self.mapping(self.xyz)
+                            x1, x2 = self.mapping(N, self.xyz)
 
                             pt[0] += N[0] * traction_bc(x1, x2, t)[key][0] * dL
                             pt[1] += N[0] * traction_bc(x1, x2, t)[key][1] * dL

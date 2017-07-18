@@ -94,7 +94,7 @@ class Quad4Enr(Quad4):
                 N, dN_ei = self.shape_function(xez=gp)
                 dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
 
-                x1, x2 = self.mapping(self.xyz)
+                x1, x2 = self.mapping(N, self.xyz)
 
                 pb_std[0] += N[0]*b_force(x1, x2, t)[0]*dJ
                 pb_std[1] += N[0]*b_force(x1, x2, t)[1]*dJ
@@ -120,15 +120,12 @@ class Quad4Enr(Quad4):
         for i, gp in enumerate(gauss_points):
 
             if callable(self.E):
-                x1, x2 = self.mapping(self.xyz)
+                x1, x2 = self.mapping(N, self.xyz)
                 C = self.c_matrix(t, x1, x2)
             elif type(self.E) is list:
                 C = self.c_matrix(t, n=i)
             else:
                 C = self.c_matrix(t)
-
-            _, dN_ei = self.shape_function(xez=gp)
-            dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
 
             B = np.array([
                 [dN_xi[0, 0], 0, dN_xi[0, 1], 0, dN_xi[0, 2], 0,
@@ -188,7 +185,7 @@ class Quad4Enr(Quad4):
                             _, _, arch_length = self.jacobian(self.xyz, dN_ei)
 
                             dL = arch_length[ele_side]
-                            x1, x2 = self.mapping(self.xyz)
+                            x1, x2 = self.mapping(N, self.xyz)
 
                             # Nstd matrix with shape function shape (2, 8)
                             N_ = []
