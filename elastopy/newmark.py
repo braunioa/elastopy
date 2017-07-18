@@ -1,10 +1,10 @@
-from elastopy import boundary
-from elastopy import stiffness
-from elastopy import load
-from elastopy import traction
-from elastopy import stress
-from elastopy import mass
-from elastopy import strain
+from . import boundary
+from  import stiffness
+from . import load
+from . import traction
+from . import stress
+from . import mass
+from . import strain
 import numpy as np
 
 

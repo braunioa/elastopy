@@ -1,4 +1,4 @@
-from elastopy import newmark
+from .. import newmark
 
 
 def solver(model, material, b_force, trac_bc, displ_bc, t_int, dt,

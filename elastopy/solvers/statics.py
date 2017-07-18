@@ -39,7 +39,10 @@ def solver(model, body_force=None, traction_bc=None, displ_bc=None,
 
     U = np.linalg.solve(Km, Pm)
 
-    SIG = 0
-    # SIG = stress.recovery_gauss(model, U, EPS0)
+    if model.xfem:
+        SIG = 0
+    else:
+        SIG = stress.recovery_gauss(model, U, EPS0)
+
     print('Solution completed!')
     return U, SIG

@@ -13,7 +13,7 @@ from .xfem.zerolevelset import Create
 class Build(object):
     """Build the model object
 
-    Note: 
+    Note:
         The enrichment attributes are set if the zerolevelset is passed
         as a non None argument.
 

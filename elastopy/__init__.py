@@ -7,4 +7,3 @@ from .material import Material
 from .solvers import statics
 from .postprocess import plotter
 
-

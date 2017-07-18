@@ -10,7 +10,8 @@ def find_num(string):
     """Find all numbers in a string
 
     """
-    # [+-]?(?:\d+(?:\.\d*)?|\.\d+) this one does't account for scientific notation
+    # [+-]?(?:\d+(?:\.\d*)?|\.\d+) this one does't account for
+    # scientific notation
     num = re.findall(r'[-+]?\d+[\.]?\d*[eE]?[-+]?\d*', string)
     return num
 
@@ -22,7 +23,7 @@ class Parse(object):
         bound_ele (list): [ele, side_of_ele_at_bound, bound_line]
         name (std): file name is assigned as model name
         DOF (list of list): list of degree's of freedom (dof) indexes for
-            each element    
+            each element
         nodal_DOF (list of list): list of dof for each node
 
     """
