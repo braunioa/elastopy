@@ -58,6 +58,11 @@ class Quad4(Element):
                              [1.0, 1.0],
                              [-1.0, 1.0]])
 
+        # gauss points
+        # TODO: better way to define general gauss points
+        self.gauss_points = self.XEZ / np.sqrt(3)
+        self.num_gp = len(self.gauss_points)
+
         try:
             if model.xfem:
                 # In this case self.E will be
@@ -224,10 +229,8 @@ class Quad4(Element):
         """
         k = np.zeros((8, 8))
 
-        gauss_points = self.XEZ / np.sqrt(3.0)
-
-        for gp in gauss_points:
-            _, dN_ei = self.shape_function(xez=gp)
+        for gp in self.gauss_points:
+            N, dN_ei = self.shape_function(xez=gp)
             dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
 
             if callable(self.E):

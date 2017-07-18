@@ -39,37 +39,50 @@ class Quad4Enr(Quad4):
         kaa = np.zeros((self.num_enr_dof, self.num_enr_dof))
         kua = np.zeros((self.num_std_dof, self.num_enr_dof))
 
-        gauss_points = self.XEZ / np.sqrt(3.0)
-
-        for i, gp in enumerate(gauss_points):
+        for i, gp in enumerate(self.gauss_points):
             N, dN_ei = self.shape_function(xez=gp)
             dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
 
             if callable(self.E):
-                x1, x2 = self.mapping(self.xyz)
+                x1, x2 = self.mapping(N, self.xyz)
                 C = self.c_matrix(t, x1, x2)
             elif type(self.E) is list:
+                # i and self.E are in local indexing system
+                # starting from lower left node and going CCW
                 C = self.c_matrix(t, n=i)
             else:
                 C = self.c_matrix(t)
 
-            Bj = []
-            for j in range(4):
-                Bj.append(np.array([[dN_xi[0, j], 0],
-                                    [0, dN_xi[1, j]],
-                                    [dN_xi[1, j], dN_xi[0, j]]]))
-            Bstd = np.block([Bj[i] for i in range(4)])
+            Bj = {}
+            for j in range(self.num_std_nodes):
+                Bj[j] = np.array([[dN_xi[0, j], 0],
+                                 [0, dN_xi[1, j]],
+                                 [dN_xi[1, j], dN_xi[0, j]]])
+            Bstd = np.block([Bj[i] for i in range(self.num_std_nodes)])
 
-            Bk = []
-            for j, n in enumerate(self.enriched_nodes):
+            Bk = {}
+            for n in self.enriched_nodes:
+                # If conn = [1, 4, 7, 2] and n = 4 then j = 1
+                j = self.local_node_index(n)
+
                 psi = abs(N @ self.phi) - abs(self.phi[j])
+
                 dpsi_x = np.sign(N @ self.phi)*(dN_xi[0, :] @ self.phi)
                 dpsi_y = np.sign(N @ self.phi)*(dN_xi[1, :] @ self.phi)
-                Bk.append(np.array([[dN_xi[0, j]*(psi) + N[j]*dpsi_x, 0],
-                                    [0, dN_xi[1, j]*(psi) + N[j]*dpsi_y],
-                                    [dN_xi[1, j]*(psi) + N[j]*dpsi_y,
-                                     dN_xi[0, j]*(psi) + N[j]*dpsi_x]]))
-            Benr = np.block([Bk[i] for i in range(len(self.enriched_nodes))])
+
+                # store Bk using dof order
+                # dof order is in accordance with enriched nodes order
+                # but use local index to access phi, N, dN_xi
+                Bk[n] = np.array([[dN_xi[0, j]*(psi) + N[j]*dpsi_x, 0],
+                                  [0, dN_xi[1, j]*(psi) + N[j]*dpsi_y],
+                                  [dN_xi[1, j]*(psi) + N[j]*dpsi_y,
+                                   dN_xi[0, j]*(psi) + N[j]*dpsi_x]])
+
+            # Arrange Benr based on the connectivity order!
+            # if n = 1, 2, 4, 7 then store Bk with n
+            # and assemble Benr = [Bk[1], Bk[2], Bk[4], Bk[7]]
+            # enriched dofs = [16, 17, 18, 19, 20, 21, 22, 23]
+            Benr = np.block([Bk[i] for i in self.enriched_nodes])
 
             kuu += (Bstd.T @ C @ Bstd)*dJ
             kaa += (Benr.T @ C @ Benr)*dJ
@@ -112,12 +125,12 @@ class Quad4Enr(Quad4):
         """Build the element vector due initial strain
 
         """
-        gauss_points = self.XEZ / np.sqrt(3.0)
-
         pe_std = np.zeros(self.num_std_dof)
         pe_enr = np.zeros(self.num_enr_dof)
 
-        for i, gp in enumerate(gauss_points):
+        for i, gp in enumerate(self.gauss_points):
+            N, dN_ei = self.shape_function(xez=gp)
+            dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
 
             if callable(self.E):
                 x1, x2 = self.mapping(N, self.xyz)
@@ -189,10 +202,10 @@ class Quad4Enr(Quad4):
 
                             # Nstd matrix with shape function shape (2, 8)
                             N_ = []
-                            for j in range(4):
+                            for j in range(self.num_std_nodes):
                                 N_.append(np.array([[N[j], 0],
                                                     [0, N[j]]]))
-                            Nstd = np.block([N_[j] for j in range(4)])
+                            Nstd = np.block([N_[j] for j in range(self.num_std_nodes)])
 
                             # traction_bc(x1, x2, t)[key] is a numpy array shape (2,)
                             pt_std += Nstd.T @ traction_bc(x1, x2, t)[key] * dL
