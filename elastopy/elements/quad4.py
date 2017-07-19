@@ -2,6 +2,7 @@
 
 """
 from ..element import Element
+from .. import quadrature
 import numpy as np
 
 
@@ -48,6 +49,13 @@ class Quad4(Element):
         model: object with model parameters
         EPS0: element inital strain array shape [3]
 
+    Note:
+        Element material is assigned as a constant for the element, as a
+        function of space or as discrete nodal values. In the last case, the
+        zero level set is used to define different regions. Negative 1 is a
+        negative and positive 1 is another. The nodal values are interpolated
+        in the integrals using the shape functions.
+
     """
     def __init__(self, eid, model, EPS0):
         super().__init__(eid, model)
@@ -60,12 +68,14 @@ class Quad4(Element):
 
         # gauss points
         # TODO: better way to define general gauss points
-        self.gauss_points = self.XEZ / np.sqrt(3)
-        self.num_gp = len(self.gauss_points)
+        self.gauss_quad = quadrature.Quadrilateral(self.num_quad_points)
+        self.num_gp = len(self.gauss_quad.points)
 
         try:
             if model.xfem:
-                # In this case self.E will be
+                # In this case self.E will be defined for each node in element
+                # based on level set PHI. If level set has negative sign, then
+                # it is a surface, a positive indicates another
                 self.E = [model.material.E[np.sign(model.PHI[i])]
                           for i in self.conn]
                 self.nu = [model.material.nu[np.sign(model.PHI[i])]
@@ -185,24 +195,52 @@ class Quad4(Element):
             xyz (array of floats): coordinates of element nodes in cartesian
                 coordinates
             dN_ei (array of floats): derivative of shape functions
+                dN_ei = [[dN1_xi, dN2_xi, ...],
+                         [dN1_eta, dN2_eta, ...]]
 
         Returns:
             det_jac (float): determinant of the jacobian matrix
             dN_xi (array of floats): derivative of shape function
-                with respect to cartesian system
+                with respect to cartesian system.
+                    dN_xi = [[dN1_x, dN2_x, ...],
+                             [dN1_y, dN2_y, ...]]
             arch_length (array of floats): arch length for change of variable
                 in the line integral
-        """
-        # Jac = [ x1_e1 x2_e1
-        #         x1_e2 x2_e2 ]
-        Jac = dN_ei @ xyz
 
-        det_jac = abs((Jac[0, 0]*Jac[1, 1] -
-                       Jac[0, 1]*Jac[1, 0]))
+        Note:
+            The jacobian matrix is obtained With the chain rule,
+
+                d/dx = (d/dxi)(dxi/dx) + (d/deta)(deta/dx)
+                d/dy = (d/dxi)(dxi/dy) + (d/deta)(deta/dy)
+
+            which in matrix form,
+
+                d/dX = J d/dXi
+
+            where X=(x, y) and Xi=(xi, eta) and J is the Jacobian matrix.
+
+                J = [[dxi/dx, deta/dx],
+                     [dxi/dy, deta/dy]]
+
+            Inverting the relation above,
+
+                d/dXi = J^{-1} d/dX
+
+            where,
+
+                J^{-1} = [[dx/dxi, dy/dxi],
+                          [dx/deta, dy/deta]]
+        """
+        # jac = [ x1_e1 x2_e1
+        #         x1_e2 x2_e2 ]
+        jac = dN_ei @ xyz
+
+        det_jac = abs((jac[0, 0]*jac[1, 1] -
+                       jac[0, 1]*jac[1, 0]))
 
         # jac_inv = [ e1_x1 e2_x1
         #            e1_x2 e2_x2 ]
-        jac_inv = np.linalg.inv(Jac)
+        jac_inv = np.linalg.inv(jac)
 
         # Using Chain rule,
         # N_xi = N_eI * eI_xi (2x4 array)
@@ -216,10 +254,10 @@ class Quad4(Element):
         # Length of the transofmation arch
         # Jacobian for line integral-2.
         arch_length = np.array([
-            (Jac[0, 0]**2 + Jac[0, 1]**2)**(1/2),
-            (Jac[1, 0]**2 + Jac[1, 1]**2)**(1/2),
-            (Jac[0, 0]**2 + Jac[0, 1]**2)**(1/2),
-            (Jac[1, 0]**2 + Jac[1, 1]**2)**(1/2)
+            (jac[0, 0]**2 + jac[0, 1]**2)**(1/2),
+            (jac[1, 0]**2 + jac[1, 1]**2)**(1/2),
+            (jac[0, 0]**2 + jac[0, 1]**2)**(1/2),
+            (jac[1, 0]**2 + jac[1, 1]**2)**(1/2)
         ])
         return det_jac, dN_xi, arch_length
 
@@ -229,7 +267,7 @@ class Quad4(Element):
         """
         k = np.zeros((8, 8))
 
-        for gp in self.gauss_points:
+        for w, gp in zip(self.gauss_quad.weights, self.gauss_quad.points):
             N, dN_ei = self.shape_function(xez=gp)
             dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
 
@@ -257,19 +295,19 @@ class Quad4(Element):
         """
         return None
 
-    def c_matrix(self, t=1, x1=1, x2=1, n=None):
+    def c_matrix(self, t=1, x1=1, x2=1, N=None):
         """Build the element constitutive matrix
 
         """
         if callable(self.E):
             E = self.E(x1, x2)
         elif type(self.E) is list:
-            E = self.E[n]
+            E = N @ self.E
         else:
             E = self.E
 
         if type(self.nu) is list:
-            nu = self.nu[n]
+            nu = N @ self.nu
         else:
             nu = self.nu
 
@@ -287,24 +325,23 @@ class Quad4(Element):
         """Build the element vector due body forces b_force
 
         """
-        gauss_points = self.XEZ / np.sqrt(3.0)
 
         pb = np.zeros(8)
         if b_force is not None:
-            for gp in gauss_points:
+            for w, gp in zip(self.gauss_quad.weights, self.gauss_quad.points):
                 N, dN_ei = self.shape_function(xez=gp)
                 dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
 
                 x1, x2 = self.mapping(N, self.xyz)
 
-                pb[0] += N[0]*b_force(x1, x2, t)[0]*dJ
-                pb[1] += N[0]*b_force(x1, x2, t)[1]*dJ
-                pb[2] += N[1]*b_force(x1, x2, t)[0]*dJ
-                pb[3] += N[1]*b_force(x1, x2, t)[1]*dJ
-                pb[4] += N[2]*b_force(x1, x2, t)[0]*dJ
-                pb[5] += N[2]*b_force(x1, x2, t)[1]*dJ
-                pb[6] += N[3]*b_force(x1, x2, t)[0]*dJ
-                pb[7] += N[3]*b_force(x1, x2, t)[1]*dJ
+                pb[0] += w*N[0]*b_force(x1, x2, t)[0]*dJ
+                pb[1] += w*N[0]*b_force(x1, x2, t)[1]*dJ
+                pb[2] += w*N[1]*b_force(x1, x2, t)[0]*dJ
+                pb[3] += w*N[1]*b_force(x1, x2, t)[1]*dJ
+                pb[4] += w*N[2]*b_force(x1, x2, t)[0]*dJ
+                pb[5] += w*N[2]*b_force(x1, x2, t)[1]*dJ
+                pb[6] += w*N[3]*b_force(x1, x2, t)[0]*dJ
+                pb[7] += w*N[3]*b_force(x1, x2, t)[1]*dJ
 
         return pb * self.thickness
 

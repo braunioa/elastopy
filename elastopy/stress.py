@@ -165,15 +165,17 @@ def recovery_at_gp(U, model, t=1):
         u = U[element.dof]
 
         # loop over quadrature points
-        for n, gp in enumerate(element.gauss_points):
-            N, dN_ei = element.shape_function(gp)
+        for w, gp in zip(element.gauss_quad.weights,
+                         element.gauss_quad.points):
+
+            N, dN_ei = element.shape_function(xez=gp)
             dJ, dN_xi, _ = element.jacobian(element.xyz, dN_ei)
 
             if callable(element.E):
                 x1, x2 = element.mapping(N, element.xyz)
                 C = element.c_matrix(t, x1, x2)
             elif type(element.E) is list:
-                C = element.c_matrix(t, n=n)
+                C = element.c_matrix(t, N=N)
             else:
                 C = element.c_matrix(t)
 

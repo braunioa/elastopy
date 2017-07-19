@@ -39,7 +39,7 @@ class Quad4Enr(Quad4):
         kaa = np.zeros((self.num_enr_dof, self.num_enr_dof))
         kua = np.zeros((self.num_std_dof, self.num_enr_dof))
 
-        for i, gp in enumerate(self.gauss_points):
+        for w, gp in zip(self.gauss_quad.weights, self.gauss_quad.points):
             N, dN_ei = self.shape_function(xez=gp)
             dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
 
@@ -49,7 +49,7 @@ class Quad4Enr(Quad4):
             elif type(self.E) is list:
                 # i and self.E are in local indexing system
                 # starting from lower left node and going CCW
-                C = self.c_matrix(t, n=i)
+                C = self.c_matrix(t, N=N)
             else:
                 C = self.c_matrix(t)
 
@@ -84,14 +84,18 @@ class Quad4Enr(Quad4):
             # enriched dofs = [16, 17, 18, 19, 20, 21, 22, 23]
             Benr = np.block([Bk[i] for i in self.enriched_nodes])
 
-            kuu += (Bstd.T @ C @ Bstd)*dJ
-            kaa += (Benr.T @ C @ Benr)*dJ
-            kua += (Bstd.T @ C @ Benr)*dJ
+            kuu += w*(Bstd.T @ C @ Bstd)*dJ
+            kaa += w*(Benr.T @ C @ Benr)*dJ
+            kua += w*(Bstd.T @ C @ Benr)*dJ
 
         k = np.block([[kuu, kua],
                       [kua.T, kaa]])
 
-        return k
+        # np.set_printoptions(precision=3, suppress=True)
+        # print('')
+        # print(self.eid, kuu/1e6)
+        # print(self.eid, kaa/1e6*3600)
+        # print(self.eid, kua/1e6*60)
 
         return k * self.thickness
 
@@ -130,7 +134,7 @@ class Quad4Enr(Quad4):
         pe_std = np.zeros(self.num_std_dof)
         pe_enr = np.zeros(self.num_enr_dof)
 
-        for i, gp in enumerate(self.gauss_points):
+        for w, gp in zip(self.gauss_quad.weights, self.gauss_quad.points):
             N, dN_ei = self.shape_function(xez=gp)
             dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
 
@@ -138,7 +142,7 @@ class Quad4Enr(Quad4):
                 x1, x2 = self.mapping(N, self.xyz)
                 C = self.c_matrix(t, x1, x2)
             elif type(self.E) is list:
-                C = self.c_matrix(t, n=i)
+                C = self.c_matrix(t, N=N)
             else:
                 C = self.c_matrix(t)
 
@@ -150,7 +154,7 @@ class Quad4Enr(Quad4):
                 [dN_xi[1, 0], dN_xi[0, 0], dN_xi[1, 1], dN_xi[0, 1],
                  dN_xi[1, 2], dN_xi[0, 2], dN_xi[1, 3], dN_xi[0, 3]]])
 
-            pe_std += (B.T @ C @ self.eps0)*dJ
+            pe_std += w*(B.T @ C @ self.eps0)*dJ
 
         pe = np.block([pe_std, pe_enr])
         return pe * self.thickness

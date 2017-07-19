@@ -57,9 +57,12 @@ class Build(object):
         zerolevelset (obj): aggregation
 
     """
-    def __init__(self, mesh, material=None, zerolevelset=None):
+    def __init__(self, mesh, material=None, zerolevelset=None,
+                 num_quad_points=2):
         # copy attributes from mesh object
         self.__dict__ = mesh.__dict__.copy()
+
+        self.num_quad_points = self.num_ele * [num_quad_points]
 
         self.xfem = False
 
@@ -113,6 +116,9 @@ class Build(object):
                         self.DOF[e].append(ind*2 + max_dof_id)
                         self.DOF[e].append(ind*2 + max_dof_id + 1)
 
+                    # change number of quadrature points
+                    self.num_quad_points[e] = 4
+
             # add 2 new dofs for each enriched node
             self.num_dof += 2*len(self.enriched_nodes)
 
@@ -127,11 +133,16 @@ if __name__ == '__main__':
     mesh = Mesh()
     mesh.XYZ = np.array([[0, 0], [1, 0], [1, 1], [0, 1]])
     mesh.CONN = np.array([[0, 1, 2, 3]])
+    mesh.num_ele = 1
+    mesh.DOF = [[0, 1, 2, 3, 4, 5, 6, 7]]
+    mesh.num_dof = 8
 
     # center in (1, 1) and radius .2
     def func(x, y):
-        return (x - 1)**2 + (y - 1)**2 - .2**2
-    z_ls = Create(func, [0, 1], [0, 1], num_div=50)
+        # return (x - 1)**2 + (y - 1)**2 - 0.2**2
+        return x - .5
+
+    z_ls = Create(func, [0, 1], [0, 1], num_div=3)
 
     model = Build(mesh, zerolevelset=z_ls)
     # print(model.discontinuity_elements)

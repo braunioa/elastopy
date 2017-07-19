@@ -47,5 +47,7 @@ class Element(object):
 
         self.id_m = np.ix_(self.dof, self.dof)
         self.id_v = self.dof
+
+        self.num_quad_points = model.num_quad_points[eid]
         self.thickness = model.thickness
 
