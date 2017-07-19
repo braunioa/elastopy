@@ -93,6 +93,8 @@ class Quad4Enr(Quad4):
 
         return k
 
+        return k * self.thickness
+
     def load_body_vector(self, b_force=None, t=1):
         """Build the element vector due body forces b_force
 
@@ -119,7 +121,7 @@ class Quad4Enr(Quad4):
                 pb_std[7] += N[3]*b_force(x1, x2, t)[1]*dJ
 
         pb = np.block([pb_std, pb_enr])
-        return pb
+        return pb * self.thickness
 
     def load_strain_vector(self, t=1):
         """Build the element vector due initial strain
@@ -151,7 +153,7 @@ class Quad4Enr(Quad4):
             pe_std += (B.T @ C @ self.eps0)*dJ
 
         pe = np.block([pe_std, pe_enr])
-        return pe
+        return pe * self.thickness
 
     def load_traction_vector(self, traction_bc=None, t=1):
         """Build element load vector due traction_bction boundary condition

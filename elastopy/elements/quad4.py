@@ -247,9 +247,9 @@ class Quad4(Element):
                 [dN_xi[1, 0], dN_xi[0, 0], dN_xi[1, 1], dN_xi[0, 1],
                  dN_xi[1, 2], dN_xi[0, 2], dN_xi[1, 3], dN_xi[0, 3]]])
 
-            k += (B.T @ C @ B)*dJ
+            k += w * (B.T @ C @ B) * dJ
 
-        return k
+        return k * self.thickness
 
     def mass_matrix(self, t=1):
         """Build element mass matrix
@@ -306,7 +306,7 @@ class Quad4(Element):
                 pb[6] += N[3]*b_force(x1, x2, t)[0]*dJ
                 pb[7] += N[3]*b_force(x1, x2, t)[1]*dJ
 
-        return pb
+        return pb * self.thickness
 
     def load_strain_vector(self, t=1):
         """Build the element vector due initial strain
@@ -331,7 +331,7 @@ class Quad4(Element):
 
             pe += (B.T @ C @ self.eps0)*dJ
 
-        return pe
+        return pe * self.thickness
 
     def load_traction_vector(self, traction_bc=None, t=1):
         """Build element load vector due traction_bction boundary condition

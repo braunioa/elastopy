@@ -47,3 +47,5 @@ class Element(object):
 
         self.id_m = np.ix_(self.dof, self.dof)
         self.id_v = self.dof
+        self.thickness = model.thickness
+

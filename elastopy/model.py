@@ -67,6 +67,11 @@ class Build(object):
             # aggregate material object as a model instance
             self.material = material
 
+            if material.case is 'strain':
+                self.thickness = 0.01
+            else:
+                self.thickness = 1
+
         self.enriched_nodes = np.array([], dtype='int')
         self.enriched_elements = []
         # define if there will be enrichment
