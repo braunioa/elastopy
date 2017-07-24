@@ -69,13 +69,14 @@ def internode_enrichment(U, model, grid=5):
     nu = nodal_to_coordinate(Ustd, model)
     # initialize inter node results (inu)
     inu = []
-
+    uenr = []
     # Loop over each element to access shape functions
     for e, conn in enumerate(model.CONN):
         element = constructor(e, model)
 
         # fem solution constants a = [Ustd Uenr]
         a = U[element.dof]
+        aenr = a[8:]
 
         # check if element has enriched nodes
         if e in model.enriched_elements:
@@ -128,10 +129,13 @@ def internode_enrichment(U, model, grid=5):
                     u_ = Nenh @ a
                     inu.append([x, y, u_[0], u_[1]])
 
+                    ue_ = Nenr @ aenr
+                    uenr.append([x, y, ue_[0], ue_[1]])
+
     u = np.block([[nu],
                   [np.array(inu)]])
 
-    return u
+    return u, np.array(uenr)
 
 
 def nodal_to_coordinate(field, model):

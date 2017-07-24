@@ -61,7 +61,8 @@ class Quad4(Element):
         super().__init__(eid, model)
 
         # Nodal coordinates in the natural domain (isoparametric coordinates)
-        self.XEZ = np.array([[-1.0, -1.0],
+        # This defines the local node numbering, following gmsh convention
+        self.xez = np.array([[-1.0, -1.0],
                              [1.0, -1.0],
                              [1.0, 1.0],
                              [-1.0, 1.0]])
@@ -143,8 +144,8 @@ class Quad4(Element):
         e2 = xez[1]
 
         # Terms of the shape function
-        e1_term = 0.5*(1.0 + self.XEZ[:, 0] * e1)
-        e2_term = 0.5*(1.0 + self.XEZ[:, 1] * e2)
+        e1_term = 0.5*(1.0 + self.xez[:, 0] * e1)
+        e2_term = 0.5*(1.0 + self.xez[:, 1] * e2)
 
         # Basis functions
         # N = [ N_1 N_2 N_3 N_4 ]
@@ -155,8 +156,8 @@ class Quad4(Element):
         # dN = [ dN1_e1 dN2_e1 ...
         #         dN1_e2 dN2_e2 ... ]
         self.dN_ei = np.zeros((2, 4))
-        self.dN_ei[0, :] = 0.5 * self.XEZ[:, 0] * e2_term
-        self.dN_ei[1, :] = 0.5 * self.XEZ[:, 1] * e1_term
+        self.dN_ei[0, :] = 0.5 * self.xez[:, 0] * e2_term
+        self.dN_ei[1, :] = 0.5 * self.xez[:, 1] * e1_term
 
         return self.N, self.dN_ei
 
@@ -234,6 +235,8 @@ class Quad4(Element):
         # jac = [ x1_e1 x2_e1
         #         x1_e2 x2_e2 ]
         jac = dN_ei @ xyz
+        if (jac[0, 0]*jac[1, 1] - jac[0, 1]*jac[1, 0]) < 0:
+            print('Jacobiano negativo no elemento {}'.format(self.eid))
 
         det_jac = abs((jac[0, 0]*jac[1, 1] -
                        jac[0, 1]*jac[1, 0]))
@@ -271,11 +274,7 @@ class Quad4(Element):
             N, dN_ei = self.shape_function(xez=gp)
             dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
 
-            if callable(self.E):
-                x1, x2 = self.mapping(N, self.xyz)
-                C = self.c_matrix(t, x1, x2)
-            else:
-                C = self.c_matrix(t)
+            C = self.c_matrix(N, t)
 
             B = np.array([
                 [dN_xi[0, 0], 0, dN_xi[0, 1], 0, dN_xi[0, 2], 0,
@@ -295,13 +294,18 @@ class Quad4(Element):
         """
         return None
 
-    def c_matrix(self, t=1, x1=1, x2=1, N=None):
+    def c_matrix(self, N, t=1):
         """Build the element constitutive matrix
+
+        Note:
+            Check if E is given as a function, as a list or as a float.
 
         """
         if callable(self.E):
+            x1, x2 = self.mapping(N, self.xyz)
             E = self.E(x1, x2)
         elif type(self.E) is list:
+            # interpolate using shape functions
             E = N @ self.E
         else:
             E = self.E
@@ -349,14 +353,14 @@ class Quad4(Element):
         """Build the element vector due initial strain
 
         """
-        C = self.c_matrix(t)
-
-        gauss_points = self.XEZ / np.sqrt(3.0)
+        gauss_points = self.xez / np.sqrt(3.0)
 
         pe = np.zeros(8)
         for gp in gauss_points:
-            _, dN_ei = self.shape_function(xez=gp)
+            N, dN_ei = self.shape_function(xez=gp)
             dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
+
+            C = self.c_matrix(N, t)
 
             B = np.array([
                 [dN_xi[0, 0], 0, dN_xi[0, 1], 0, dN_xi[0, 2], 0,

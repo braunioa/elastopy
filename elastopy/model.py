@@ -55,25 +55,20 @@ class Build(object):
             level set contour to mesh nodes.
         material (obj): aggregation
         zerolevelset (obj): aggregation
+        thickness (float default 1.0): thickness of model in meters (SI)
 
     """
     def __init__(self, mesh, material=None, zerolevelset=None,
-                 num_quad_points=2):
+                 num_quad_points=4, thickness=1.):
         # copy attributes from mesh object
         self.__dict__ = mesh.__dict__.copy()
-
         self.num_quad_points = self.num_ele * [num_quad_points]
-
+        self.thickness = thickness
         self.xfem = False
 
         if material is not None:
             # aggregate material object as a model instance
             self.material = material
-
-            if material.case is 'strain':
-                self.thickness = 0.01
-            else:
-                self.thickness = 1
 
         self.enriched_nodes = np.array([], dtype='int')
         self.enriched_elements = []
@@ -115,9 +110,6 @@ class Build(object):
                         ind, = np.where(self.enriched_nodes == n)[0]
                         self.DOF[e].append(ind*2 + max_dof_id)
                         self.DOF[e].append(ind*2 + max_dof_id + 1)
-
-                    # change number of quadrature points
-                    self.num_quad_points[e] = 4
 
             # add 2 new dofs for each enriched node
             self.num_dof += 2*len(self.enriched_nodes)

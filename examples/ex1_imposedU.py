@@ -5,9 +5,9 @@ mesh_file = 'patch'
 
 mesh = gmsh.Parse(mesh_file)
 
-model = Build(mesh)
-
 material = Material(E={9: 1000}, nu={9: 0.3})
+
+model = Build(mesh, material)
 
 
 def body_forces(x1, x2, t=1):
@@ -25,12 +25,11 @@ def displacement_imposed(x1, x2):
         ('nodes', 1, 5, 2): [1.0, 0.0]}
 
 
-U, SIG = statics.solver(model, material, body_forces,
+U, SIG = statics.solver(model, body_forces,
                         traction_imposed, displacement_imposed)
 
 plotter.model(model, ele=True, nodes_label=True, edges_label=True,
               ele_label=True)
 plotter.model_deformed(model, U, magf=0.1, ele=True)
-print(SIG[:, 0])
-
+print(U, SIG)
 plotter.show()

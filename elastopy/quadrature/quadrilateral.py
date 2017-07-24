@@ -48,8 +48,32 @@ class Quadrilateral(object):
                     self.weights.append(wi*wj)
                     self.points.append([pi, pj])
 
+        elif num_of_points == 8:
+            self.weights = []
+            self.points = []
+            w = [0.3626837833783620,
+	         0.3626837833783620,
+	         0.3137066458778873,
+	         0.3137066458778873,
+	         0.2223810344533745,
+	         0.2223810344533745,
+	         0.1012285362903763,
+	         0.1012285362903763]
+            p =[-0.1834346424956498,
+	        0.1834346424956498,
+	        -0.5255324099163290,
+	        0.5255324099163290,
+	        -0.7966664774136267,
+	        0.7966664774136267,
+	        -0.9602898564975363,
+                0.9602898564975363]
+            for wi, pi in zip(w, p):
+                for wj, pj in zip(w, p):
+                    self.weights.append(wi*wj)
+                    self.points.append([pi, pj])
+
 
 if __name__ is '__main__':
-    quad = quadrilateral(3)
+    quad = Quadrilateral(3)
     print(quad.points)
     print(quad.weights)

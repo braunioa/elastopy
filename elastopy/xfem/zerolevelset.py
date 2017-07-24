@@ -29,8 +29,14 @@ class Create(object):
                                                np.linspace(y_domain[0],
                                                            y_domain[1],
                                                            num_div))
+        # flip the grid so it agrees with cartesian coordinates
+        self.grid_x = np.flipud(self.grid_x)
+        self.grid_y = np.flipud(self.grid_y)
         ls = function(self.grid_x, self.grid_y)
-        self.mask_ls = ls/abs(ls)
+
+        # be careful with 0 division, converting it to 0.
+        with np.errstate(divide='ignore', invalid='ignore'):
+            self.mask_ls = np.nan_to_num(ls/abs(ls))
 
         # define material parameters
         self.region = [-1, 1]

@@ -50,14 +50,15 @@ def model(model, name=None, color='k', dpi=100, ele=False, ele_label=False,
 
 
 def model_deformed(model, U, magf=1, ele=False, name=None, color='Tomato',
-                   dpi=100):
+                   dpi=100, ax=None):
     """Plot deformed model
 
     """
-    fig = plt.figure(name, dpi=dpi)
-    ax = fig.add_subplot(1, 1, 1)
-    ax.set_xlabel(r'x')
-    ax.set_ylabel(r'y')
+    if ax is None:
+        fig = plt.figure(name, dpi=dpi)
+        ax = fig.add_subplot(1, 1, 1)
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
     ax.set_aspect('equal')
 
     if ele is True:

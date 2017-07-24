@@ -27,7 +27,7 @@ def recovery(model, U, EPS0, t=1):
         u = U[dof]
 
         # quadrature on the nodes coord in the isodomain
-        for n, gp in enumerate(element.XEZ):
+        for n, gp in enumerate(element.xez):
             _, dN_ei = element.shape_function(gp)
             dJ, dN_xi, _ = element.jacobian(xyz, dN_ei)
 
@@ -109,15 +109,11 @@ def recovery_gauss(model, U, EPS0, t=1):
         u = U[dof]
 
         # quadrature on the nodes coord in the isodomain
-        for n, gp in enumerate(element.XEZ/np.sqrt(3)):
-            _, dN_ei = element.shape_function(gp)
+        for n, gp in enumerate(element.xez/np.sqrt(3)):
+            N, dN_ei = element.shape_function(gp)
             dJ, dN_xi, _ = element.jacobian(xyz, dN_ei)
 
-            if callable(element.E):
-                x1, x2 = element.mapping(element.xyz)
-                C = element.c_matrix(t, x1, x2)
-            else:
-                C = element.c_matrix(t)
+            C = element.c_matrix(N, t)
 
             # number of elements sharing a node
             num_ele_shrg = (model.CONN == conn[n]).sum()
@@ -171,13 +167,7 @@ def recovery_at_gp(U, model, t=1):
             N, dN_ei = element.shape_function(xez=gp)
             dJ, dN_xi, _ = element.jacobian(element.xyz, dN_ei)
 
-            if callable(element.E):
-                x1, x2 = element.mapping(N, element.xyz)
-                C = element.c_matrix(t, x1, x2)
-            elif type(element.E) is list:
-                C = element.c_matrix(t, N=N)
-            else:
-                C = element.c_matrix(t)
+            C = element.c_matrix(N, t)
 
             # Standard geadient operator matrix (stain-displacement)
             B_s = []

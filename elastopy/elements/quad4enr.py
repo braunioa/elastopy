@@ -43,15 +43,7 @@ class Quad4Enr(Quad4):
             N, dN_ei = self.shape_function(xez=gp)
             dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
 
-            if callable(self.E):
-                x1, x2 = self.mapping(N, self.xyz)
-                C = self.c_matrix(t, x1, x2)
-            elif type(self.E) is list:
-                # i and self.E are in local indexing system
-                # starting from lower left node and going CCW
-                C = self.c_matrix(t, N=N)
-            else:
-                C = self.c_matrix(t)
+            C = self.c_matrix(N, t)
 
             Bj = {}
             for j in range(self.num_std_nodes):
@@ -103,7 +95,7 @@ class Quad4Enr(Quad4):
         """Build the element vector due body forces b_force
 
         """
-        gauss_points = self.XEZ / np.sqrt(3.0)
+        gauss_points = self.xez / np.sqrt(3.0)
 
         pb_std = np.zeros(self.num_std_dof)
         pb_enr = np.zeros(self.num_enr_dof)
@@ -138,13 +130,7 @@ class Quad4Enr(Quad4):
             N, dN_ei = self.shape_function(xez=gp)
             dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
 
-            if callable(self.E):
-                x1, x2 = self.mapping(N, self.xyz)
-                C = self.c_matrix(t, x1, x2)
-            elif type(self.E) is list:
-                C = self.c_matrix(t, N=N)
-            else:
-                C = self.c_matrix(t)
+            C = self.c_matrix(N, t)
 
             B = np.array([
                 [dN_xi[0, 0], 0, dN_xi[0, 1], 0, dN_xi[0, 2], 0,
@@ -211,11 +197,15 @@ class Quad4Enr(Quad4):
                             for j in range(self.num_std_nodes):
                                 N_.append(np.array([[N[j], 0],
                                                     [0, N[j]]]))
-                            Nstd = np.block([N_[j] for j in range(self.num_std_nodes)])
+                            Nstd = np.block([N_[j]
+                                             for j
+                                             in range(self.num_std_nodes)])
 
-                            # traction_bc(x1, x2, t)[key] is a numpy array shape (2,)
+                            # traction_bc(x1, x2, t)[key] is a numpy
+                            # array shape (2,)
                             pt_std += Nstd.T @ traction_bc(x1, x2, t)[key] * dL
 
+                            # pt enr alwals 0 ????
                             # node in this element at this line
                             node = self.local_nodes_in_side[ele_side][w]
                             psi = abs(N @ self.phi) - abs(self.phi[node])
