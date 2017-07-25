@@ -13,6 +13,28 @@ from .xfem.zerolevelset import Create
 class Build(object):
     """Build the model object
 
+    Args:
+        mesh (object): object containing mesh data
+        zerolevelset (optional): list with objects with zero level set
+            definition created with the class:
+                elastopy.xfem.zerolevelset.Create()
+            each object has the mask array that defines the interface, the mask
+            consists of -1 and 1, the interface is where the sign changes.
+
+    Attributes:
+        mesh attributes from elastopy.mesh.gmsh.Parse() object
+        enriched_elements (list): elements that are enriched used in
+            constructing elements
+        enriched_nodes (list): list with all nodes enriched (global tag)
+        num_enr_dof (int): number of enriched dofs for whole model
+        num_std_dof (int): number of standard dofs for whole model
+        xfem (boolean): indicates if xfem is used
+        phi (numpy array): shape (num_nodes, ) signed distance function from
+            the zero level set contour to mesh nodes.
+        material (obj): aggregation
+        zerolevelset (list of obj default []): aggregation of list
+        thickness (float default 1.0): thickness of model in meters (SI)
+
     Note:
         The enrichment attributes are set if the zerolevelset is passed
         as a non None argument.
@@ -23,6 +45,8 @@ class Build(object):
         be used.
         The enriched dofs are set by continuing counting from the last
         global dof tag.
+        The order is defined by enriched nodes list which comes resulted
+        from the built in set function.
 
         Example:
             # standard dofs with global tags
@@ -37,86 +61,106 @@ class Build(object):
         and the number in {} is the additional dof for the 2d mechanics
         problem.
 
-    Args:
-        mesh (object): object containing mesh data
-        zerolevelset (optional): object with zero level set
-            definition created with the class:
-                elastopy.xfem.zerolevelset.Create()
-
-    Attributes:
-        mesh attributes from elastopy.mesh.gmsh.Parse() object
-        discontinuity_elements (list): elements cut by the discontinuity
-        enriched_elements (list): elements that are enriched
-        enriched_nodes (numpy array): enriched nodes
-        num_enr_dof (int): number of enriched dofs for whole model
-        num_std_dof (int): number of standard dofs for whole model
-        xfem (boolean): indicates if xfem is used
-        PHI (numpy array): shape (nn, ) signed distance function from the zero
-            level set contour to mesh nodes.
-        material (obj): aggregation
-        zerolevelset (obj): aggregation
-        thickness (float default 1.0): thickness of model in meters (SI)
+    Note:
+        Each zerolevelset entry will have new attributes created:
+            1. signed distance function (phi) (array shape (num_nodes, ))
+            2. discontinuity_elements (list): list with elements that are cut
+                by discontinuity interface defined by the zero level set
+            3. enriched_nodes (list): list of nodes marked for enrichment
+            4. enriched_elements (list): list of enriched elements for this zls
+            5. enriched dof (dictionary): enriched dof associated to each
+                enriched element
 
     """
-    def __init__(self, mesh, material=None, zerolevelset=None,
+    def __init__(self, mesh, material=None, zerolevelset=[],
                  num_quad_points=4, thickness=1.):
         # copy attributes from mesh object
         self.__dict__ = mesh.__dict__.copy()
         self.num_quad_points = self.num_ele * [num_quad_points]
         self.thickness = thickness
+
+        # check if zerolevelset is defined
         self.xfem = False
+        # empty lists are false
+        if zerolevelset:
+            self.xfem = True
 
         if material is not None:
             # aggregate material object as a model instance
             self.material = material
 
-        self.enriched_nodes = np.array([], dtype='int')
         self.enriched_elements = []
-        # define if there will be enrichment
-        if zerolevelset is not None:
-            self.xfem = True
-            self.zerolevelset = zerolevelset
-            self.discontinuity_elements = []
-            # self.PHI shape (nn, ) with signed distance value
-            self.PHI = levelset.distance(zerolevelset.mask_ls,
-                                         zerolevelset.grid_x,
-                                         zerolevelset.grid_y,
-                                         self.XYZ)
+        self.enriched_nodes = []
+
+        self.num_enr_dof = 0
+        # list with zerolevelset objects
+        self.zerolevelset = []
+        # loop over zerolevelset objects
+        for zls in zerolevelset:
+            # update the max dof id when DOF includes enriched dof for a zls
+            # +1 to start the count enr dofs
+            max_dof_id = max(max(dof) for dof in self.DOF) + 1
+
+            # discontinuity elements of this level set
+            zls.discontinuity_elements = []
+            zls.enriched_nodes = []
+            zls.enriched_elements = []
+            zls.enriched_dof = {}
+            # zls.phi shape (num_nodes, ) with signed distance value
+            zls.phi = levelset.distance(zls.mask_ls,
+                                        zls.grid_x,
+                                        zls.grid_y,
+                                        self.XYZ)
 
             for e, conn in enumerate(self.CONN):
                 # check if element is enriched or not
-                if np.all(self.PHI[conn] < 0) or np.all(
-                        self.PHI[conn] > 0):
+                if np.all(zls.phi[conn] < 0) or np.all(
+                        zls.phi[conn] > 0):
                     pass
                 else:
-                    self.discontinuity_elements.append(e)
+                    zls.discontinuity_elements.append(e)
 
-            for e in self.discontinuity_elements:
-                self.enriched_nodes = np.append(self.enriched_nodes,
-                                                self.CONN[e])
-            self.enriched_nodes = np.unique(self.enriched_nodes)
+            # find the enriched nodes associated with this zero level set
+            # unordered
+            for e in zls.discontinuity_elements:
+                zls.enriched_nodes.extend(self.CONN[e])
+            zls.enriched_nodes = list(set(zls.enriched_nodes))
+            self.enriched_nodes.extend(zls.enriched_nodes)
 
-            # Update global DOF tags
-            max_dof_id = np.max(self.DOF) + 1  # +1 to start the count enr dofs
+            # mark enriched and blending elements for this zero level set
             for e, conn in enumerate(self.CONN):
                 # check if any enriched node is in conn
-                if np.any(np.in1d(self.enriched_nodes, conn)):
-                    self.enriched_elements.append(e)
+                if np.any(np.in1d(zls.enriched_nodes, conn)):
+                    zls.enriched_elements.append(e)
 
+                    # find the enriched dofs
                     # loop over enriched nodes in element
-                    for n in np.intersect1d(self.enriched_nodes, conn):
-                        # index of element enriched nodes in enriched nodes in
-                        # enriched nodes list
-                        ind, = np.where(self.enriched_nodes == n)[0]
+                    dof = []
+                    for n in np.intersect1d(zls.enriched_nodes, conn):
+                        # intersect1d returns sorted nodes
+                        # find the index of the node in the enriched nodes
+                        ind = np.where(zls.enriched_nodes == n)[0][0]
+                        dof.append(ind*2 + max_dof_id)
+                        dof.append(ind*2 + max_dof_id + 1)
+                        # global dof numbering for element
                         self.DOF[e].append(ind*2 + max_dof_id)
                         self.DOF[e].append(ind*2 + max_dof_id + 1)
+                    # enriched dof for element e in this zero level set
+                    zls.enriched_dof[e] = dof
 
-            # add 2 new dofs for each enriched node
-            self.num_dof += 2*len(self.enriched_nodes)
-
+            # add 2 new dofs for each enriched node for each level set
+            self.num_dof += 2*len(zls.enriched_nodes)
             # total number of enriched dofs for whole model
-            self.num_enr_dof = 2*len(self.enriched_nodes)
-            self.num_std_dof = self.num_dof - self.num_enr_dof
+            self.num_enr_dof += 2*len(zls.enriched_nodes)
+
+            # append the zero level set to model
+            self.zerolevelset.append(zls)
+            # list of all enriched elements
+            self.enriched_elements.extend(zls.enriched_elements)
+
+        self.num_std_dof = self.num_dof - self.num_enr_dof
+        self.enriched_elements = list(set(self.enriched_elements))
+        self.enriched_nodes = list(set(self.enriched_nodes))
 
 
 if __name__ == '__main__':
@@ -136,10 +180,5 @@ if __name__ == '__main__':
 
     z_ls = Create(func, [0, 1], [0, 1], num_div=3)
 
-    model = Build(mesh, zerolevelset=z_ls)
-    # print(model.discontinuity_elements)
-    # [0]
-    # print(model.enriched_nodes)
-    # [ 0  1  2  3]
-    # print(model.enriched_elements)
-    # [0]
+    model = Build(mesh, zerolevelset=[z_ls])
+

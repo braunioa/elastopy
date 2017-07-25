@@ -30,7 +30,10 @@ class Material(object):
         self.case = case
         # convert from plane stress to plane strain
         if case is 'strain':
-            for surf, E in self.E.items():
-                self.E[surf] = self.E[surf]/(1 - self.nu[surf]**2)
-            for surf, nu in self.E.items():
-                self.nu[surf] = self.nu[surf]/(1 - self.nu[surf])
+            for i in range(len(self.E)):
+                for region, E in self.E[i].items():
+                    self.E[i][region] = (self.E[i][region] /
+                                         (1 - self.nu[i][region]**2))
+                for region, nu in self.E[i].items():
+                    self.nu[i][region] = (self.nu[i][region] /
+                                          (1 - self.nu[i][region]))

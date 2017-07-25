@@ -26,6 +26,7 @@ class Element(object):
         surf
         id_m
         id_v
+        zerolevelset
 
     """
     def __init__(self, eid, model):
@@ -36,12 +37,12 @@ class Element(object):
 
         self.dof = model.DOF[eid]
         self.num_std_dof = 2*len(self.conn)
-
-        self.enriched_nodes = np.intersect1d(model.enriched_nodes, self.conn)
-
-        self.num_enr_nodes = len(self.enriched_nodes)
         self.num_std_nodes = len(self.conn)
-        self.num_enr_dof = 2*self.num_enr_nodes
+
+        # depends on zero level set
+        self.num_enr_dof = len(self.dof) - self.num_std_dof
+
+        self.zerolevelset = model.zerolevelset
 
         self.surf = model.surf_of_ele[eid]
 
@@ -51,3 +52,8 @@ class Element(object):
         self.num_quad_points = model.num_quad_points[eid]
         self.thickness = model.thickness
 
+        # enriched nodes shape (num zerolvlset, num enr nodes)
+        self.enriched_nodes = []
+        for zls in model.zerolevelset:
+            self.enriched_nodes.append(np.intersect1d(zls.enriched_nodes,
+                                                      self.conn))

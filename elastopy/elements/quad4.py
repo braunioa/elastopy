@@ -68,19 +68,39 @@ class Quad4(Element):
                              [-1.0, 1.0]])
 
         # gauss points
-        # TODO: better way to define general gauss points
         self.gauss_quad = quadrature.Quadrilateral(self.num_quad_points)
         self.num_gp = len(self.gauss_quad.points)
 
         try:
             if model.xfem:
+                # E = [E for nodes in element]
                 # In this case self.E will be defined for each node in element
-                # based on level set PHI. If level set has negative sign, then
+                # based on level set phi. If level set has negative sign, then
                 # it is a surface, a positive indicates another
-                self.E = [model.material.E[np.sign(model.PHI[i])]
+                # -1 -> zls.region['reinforcement']
+                # +1 -> zls.region['matrix']
+                
+                # model.material.E = [{-1: Evalue, 1: value}]
+                # first set materials using the first zls
+                self.E = [model.material.E[0][np.sign(self.zerolevelset[0].phi[i])]
                           for i in self.conn]
-                self.nu = [model.material.nu[np.sign(model.PHI[i])]
+                self.nu = [model.material.nu[0][
+                    np.sign(self.zerolevelset[0].phi[i])]
                            for i in self.conn]
+                # then check if other zls dominates this element
+                for ind, zls in enumerate(self.zerolevelset):
+                    E = [model.material.E[ind][np.sign(zls.phi[i])]
+                                  for i in self.conn]
+                    nu = [model.material.nu[ind][np.sign(zls.phi[i])]
+                                    for i in self.conn]
+                    # set generates unique values in list
+                    # if equals 2 means that there is a material discontinuity
+                    # in the element.
+                    # the zls in which this happens control this element
+                    # materials properties
+                    if len(set(E)) == 2:
+                        self.E = E
+                        self.nu = nu
             else:
                 self.E = model.material.E[self.surf]
                 self.nu = model.material.nu[self.surf]

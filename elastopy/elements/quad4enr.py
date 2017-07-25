@@ -26,8 +26,6 @@ class Quad4Enr(Quad4):
         # initialize Quad4 standard
         super().__init__(eid, model, EPS0)
 
-        self.phi = model.PHI[self.conn]
-
     def stiffness_matrix(self, t=1):
         """Build the enriched element stiffness matrix
 
@@ -45,6 +43,7 @@ class Quad4Enr(Quad4):
 
             C = self.c_matrix(N, t)
 
+            # standard strain-displacement matrix (discrete gradient operator)
             Bj = {}
             for j in range(self.num_std_nodes):
                 Bj[j] = np.array([[dN_xi[0, j], 0],
@@ -52,30 +51,41 @@ class Quad4Enr(Quad4):
                                  [dN_xi[1, j], dN_xi[0, j]]])
             Bstd = np.block([Bj[i] for i in range(self.num_std_nodes)])
 
-            Bk = {}
-            for n in self.enriched_nodes:
-                # If conn = [1, 4, 7, 2] and n = 4 then j = 1
-                j = self.local_node_index(n)
+            # loop for each zero level set
+            Benr = {}
+            Benr_zls = {}   # Benr for each zerp level est
+            for ind, zls in enumerate(self.zerolevelset):
+                # signed distance for nodes in this element for this zls
+                self.phi = zls.phi[self.conn]  # phi with local index
 
-                psi = abs(N @ self.phi) - abs(self.phi[j])
+                Bk = {}         # Bk for k enriched nodes
+                # enriched nodes [[nodes for the first level set], [for 2nd]]
+                for n in np.intersect1d(self.enriched_nodes[ind], self.conn):
+                    # intersect1d returns sorted values
+                    # if conn = [1, 4, 7, 2] and n = 4 then j = 1
+                    j = self.local_node_index(n)  # local index
 
-                dpsi_x = np.sign(N @ self.phi)*(dN_xi[0, :] @ self.phi)
-                dpsi_y = np.sign(N @ self.phi)*(dN_xi[1, :] @ self.phi)
+                    psi = abs(N @ self.phi) - abs(self.phi[j])
 
-                # store Bk using dof order
-                # dof order is in accordance with enriched nodes order
-                # but use local index to access phi, N, dN_xi
-                Bk[n] = np.array([[dN_xi[0, j]*(psi) + N[j]*dpsi_x, 0],
-                                  [0, dN_xi[1, j]*(psi) + N[j]*dpsi_y],
-                                  [dN_xi[1, j]*(psi) + N[j]*dpsi_y,
-                                   dN_xi[0, j]*(psi) + N[j]*dpsi_x]])
+                    dpsi_x = np.sign(N @ self.phi)*(dN_xi[0, :] @ self.phi)
+                    dpsi_y = np.sign(N @ self.phi)*(dN_xi[1, :] @ self.phi)
 
-            # Arrange Benr based on the connectivity order!
-            # if n = 1, 2, 4, 7 then store Bk with n
-            # and assemble Benr = [Bk[1], Bk[2], Bk[4], Bk[7]]
-            # enriched dofs = [16, 17, 18, 19, 20, 21, 22, 23]
-            Benr = np.block([Bk[i] for i in self.enriched_nodes])
+                    # store Bk using node index
+                    # but use local index to access phi, N, dN_xi
+                    Bk[n] = np.array([[dN_xi[0, j]*(psi) + N[j]*dpsi_x, 0],
+                                      [0, dN_xi[1, j]*(psi) + N[j]*dpsi_y],
+                                      [dN_xi[1, j]*(psi) + N[j]*dpsi_y,
+                                       dN_xi[0, j]*(psi) + N[j]*dpsi_x]])
 
+                # Arrange Benr based on the connectivity order!
+                # if n = 1, 2, 4, 7 then store Bk with n
+                # and assemble Benr = [Bk[1], Bk[2], Bk[4], Bk[7]]
+                # enriched dofs = [16, 17, 18, 19, 20, 21, 22, 23]
+                Benr_zls[ind] = np.block([Bk[i]
+                                          for i in self.enriched_nodes[ind]])
+
+            Benr = np.block([Benr_zls[i]
+                             for i in range(len(self.zerolevelset))])
             kuu += w*(Bstd.T @ C @ Bstd)*dJ
             kaa += w*(Benr.T @ C @ Benr)*dJ
             kua += w*(Bstd.T @ C @ Benr)*dJ

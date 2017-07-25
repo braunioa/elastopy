@@ -21,8 +21,11 @@ class Create(object):
         mask_ls (numpy array): 2d array shape (num_div, num_div) with
             -1 and 1 where the points between these two values define the
             discontinuity interface.
+        region (dictionary): matrix is defined by default as 1 and the
+            reinforcement as -1
     """
-    def __init__(self, function, x_domain, y_domain, num_div=50):
+    def __init__(self, function, x_domain, y_domain, num_div=50,
+                 matrix=1, reinforcement=-1):
         self.grid_x, self.grid_y = np.meshgrid(np.linspace(x_domain[0],
                                                            x_domain[1],
                                                            num_div),
@@ -39,7 +42,8 @@ class Create(object):
             self.mask_ls = np.nan_to_num(ls/abs(ls))
 
         # define material parameters
-        self.region = [-1, 1]
+        self.region = {'matrix': matrix,
+                       'reinforcement': reinforcement}
 
 
 if __name__ == '__main__':
