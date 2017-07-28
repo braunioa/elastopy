@@ -126,3 +126,33 @@ def test_4zerolevelset():
                                                      24, 25, 26, 27]
     assert model.enriched_elements == [1, 2, 3, 4]
     assert set(model.enriched_nodes) == set([5, 7, 8, 9])
+
+
+def test_5zerolevelset():
+    class Mesh():
+        pass
+    mesh = Mesh()
+    mesh.XYZ = np.array([[0, 0], [1, 0], [1, 1], [0, 1],
+                         [2, 0], [2, 1],
+                         [3, 0], [3, 1],
+                         [4, 0], [4, 1]])
+    mesh.CONN = np.array([[0, 1, 2, 3],
+                          [1, 4, 5, 2],
+                          [4, 6, 7, 5],
+                          [6, 7, 9, 7]])
+    mesh.num_ele = 4
+    mesh.DOF = [[0, 1, 2, 3, 4, 5, 6, 7],
+                [2, 3, 8, 9, 10, 11, 4, 5],
+                [8, 9, 12, 13, 14, 15, 10, 11],
+                [12, 13, 16, 17, 18, 19, 14, 15]]
+    mesh.num_dof = 20
+
+    fun1 = lambda x, y: x - .5
+    fun2 = lambda x, y: (-x + 3.5)
+    zls = [Create(fun1, [0, 4], [0, 1], num_div=50),
+           Create(fun2, [0, 4], [0, 1], num_div=50)]
+    model = Build(mesh, zerolevelset=zls)
+
+    assert model.zerolevelset[0].enriched_elements == [0, 1]
+    assert model.zerolevelset[1].enriched_elements == [2, 3]
+    assert model.zerolevelset[0].enriched_nodes == [0, 1, 2, 3]

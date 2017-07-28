@@ -178,22 +178,33 @@ def recovery_at_gp(U, model, t=1):
             Bstd = np.block([B_s[i] for i in range(element.num_std_nodes)])
 
             if model.xfem:
-                # Enriched gradient operator matrix
-                B_e = {}
-                for n in element.enriched_nodes:
-                    # local reference of node n in element
-                    j = element.local_node_index(n)
-                    psi = abs(N @ element.phi) - abs(element.phi[j])
 
-                    dpsi_x = np.sign(N @ element.phi)*(dN_xi[0, :]
-                                                       @ element.phi)
-                    dpsi_y = np.sign(N @ element.phi)*(dN_xi[1, :]
-                                                       @ element.phi)
-                    B_e[n] = np.array([[dN_xi[0, j]*(psi) + N[j]*dpsi_x, 0],
-                                       [0, dN_xi[1, j]*(psi) + N[j]*dpsi_y],
-                                       [dN_xi[1, j]*(psi) + N[j]*dpsi_y,
-                                        dN_xi[0, j]*(psi) + N[j]*dpsi_x]])
-                Benr = np.block([B_e[i] for i in element.enriched_nodes])
+                # loop for each zero level set
+                Benr_zls = {}   # Benr for each zerp level est
+                for ind, zls in enumerate(element.zerolevelset):
+                    # signed distance for nodes in this element for this zls
+                    phi = zls.phi[element.conn]  # phi with local index
+                    # Enriched gradient operator matrix
+                    B_e = {}
+                    for n in element.enriched_nodes[ind]:
+                        # local reference of node n in element
+                        j = element.local_node_index(n)
+                        psi = abs(N @ phi) - abs(phi[j])
+
+                        dpsi_x = np.sign(N @ phi)*(dN_xi[0, :] @ phi)
+                        dpsi_y = np.sign(N @ phi)*(dN_xi[1, :] @ phi)
+                        B_e[n] = np.array([
+                            [dN_xi[0, j]*(psi) + N[j]*dpsi_x, 0],
+                            [0, dN_xi[1, j]*(psi) + N[j]*dpsi_y],
+                            [dN_xi[1, j]*(psi) + N[j]*dpsi_y,
+                             dN_xi[0, j]*(psi) + N[j]*dpsi_x]])
+
+                    Benr_zls[ind] = np.block([B_e[i]
+                                              for i
+                                              in element.enriched_nodes[ind]])
+
+                Benr = np.block([Benr_zls[i]
+                                 for i in range(len(element.zerolevelset))])
 
                 B = np.block([Bstd, Benr])
             else:

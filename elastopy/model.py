@@ -26,6 +26,7 @@ class Build(object):
         enriched_elements (list): elements that are enriched used in
             constructing elements
         enriched_nodes (list): list with all nodes enriched (global tag)
+            sorted.
         num_enr_dof (int): number of enriched dofs for whole model
         num_std_dof (int): number of standard dofs for whole model
         xfem (boolean): indicates if xfem is used
@@ -69,7 +70,7 @@ class Build(object):
             3. enriched_nodes (list): list of nodes marked for enrichment
             4. enriched_elements (list): list of enriched elements for this zls
             5. enriched dof (dictionary): enriched dof associated to each
-                enriched element
+                enriched element, this is sorted.
 
     """
     def __init__(self, mesh, material=None, zerolevelset=[],
@@ -81,9 +82,12 @@ class Build(object):
 
         # check if zerolevelset is defined
         self.xfem = False
-        # empty lists are false
+        # empty list is false
         if zerolevelset:
             self.xfem = True
+            # put it in a list of len=1 if only one level set is given
+            if type(zerolevelset) is not list:
+                zerolevelset = [zerolevelset]
 
         if material is not None:
             # aggregate material object as a model instance

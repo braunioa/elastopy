@@ -131,13 +131,13 @@ class Parse(object):
         bound_ele = []
         for e, conn in enumerate(self.CONN):
             for l, n1, n2 in self.nodes_in_bound_line:
-                if np.all([n1, n2] == self.CONN[e, 0:2]):
+                if np.all(set([n1, n2]) == set(self.CONN[e, 0:2])):
                     bound_ele.append([e, 0, l])
-                if np.all([n1, n2] == self.CONN[e, 1:3]):
+                if np.all(set([n1, n2]) == set(self.CONN[e, 1:3])):
                     bound_ele.append([e, 1, l])
-                if np.all([n1, n2] == self.CONN[e, 2:4]):
+                if np.all(set([n1, n2]) == set(self.CONN[e, 2:4])):
                     bound_ele.append([e, 2, l])
-                if np.all([n1, n2] == self.CONN[e, ::-3]):
+                if np.all(set([n1, n2]) == set(self.CONN[e, ::-3])):
                     bound_ele.append([e, 3, l])
 
         self.bound_ele = np.array(bound_ele)

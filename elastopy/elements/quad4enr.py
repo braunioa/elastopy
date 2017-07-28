@@ -42,50 +42,9 @@ class Quad4Enr(Quad4):
             dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
 
             C = self.c_matrix(N, t)
+            Bstd = self.standard_gradient_operator(dN_xi)
+            Benr = self.enriched_gradient_operator(N, dN_xi)
 
-            # standard strain-displacement matrix (discrete gradient operator)
-            Bj = {}
-            for j in range(self.num_std_nodes):
-                Bj[j] = np.array([[dN_xi[0, j], 0],
-                                 [0, dN_xi[1, j]],
-                                 [dN_xi[1, j], dN_xi[0, j]]])
-            Bstd = np.block([Bj[i] for i in range(self.num_std_nodes)])
-
-            # loop for each zero level set
-            Benr = {}
-            Benr_zls = {}   # Benr for each zerp level est
-            for ind, zls in enumerate(self.zerolevelset):
-                # signed distance for nodes in this element for this zls
-                self.phi = zls.phi[self.conn]  # phi with local index
-
-                Bk = {}         # Bk for k enriched nodes
-                # enriched nodes [[nodes for the first level set], [for 2nd]]
-                for n in np.intersect1d(self.enriched_nodes[ind], self.conn):
-                    # intersect1d returns sorted values
-                    # if conn = [1, 4, 7, 2] and n = 4 then j = 1
-                    j = self.local_node_index(n)  # local index
-
-                    psi = abs(N @ self.phi) - abs(self.phi[j])
-
-                    dpsi_x = np.sign(N @ self.phi)*(dN_xi[0, :] @ self.phi)
-                    dpsi_y = np.sign(N @ self.phi)*(dN_xi[1, :] @ self.phi)
-
-                    # store Bk using node index
-                    # but use local index to access phi, N, dN_xi
-                    Bk[n] = np.array([[dN_xi[0, j]*(psi) + N[j]*dpsi_x, 0],
-                                      [0, dN_xi[1, j]*(psi) + N[j]*dpsi_y],
-                                      [dN_xi[1, j]*(psi) + N[j]*dpsi_y,
-                                       dN_xi[0, j]*(psi) + N[j]*dpsi_x]])
-
-                # Arrange Benr based on the connectivity order!
-                # if n = 1, 2, 4, 7 then store Bk with n
-                # and assemble Benr = [Bk[1], Bk[2], Bk[4], Bk[7]]
-                # enriched dofs = [16, 17, 18, 19, 20, 21, 22, 23]
-                Benr_zls[ind] = np.block([Bk[i]
-                                          for i in self.enriched_nodes[ind]])
-
-            Benr = np.block([Benr_zls[i]
-                             for i in range(len(self.zerolevelset))])
             kuu += w*(Bstd.T @ C @ Bstd)*dJ
             kaa += w*(Benr.T @ C @ Benr)*dJ
             kua += w*(Bstd.T @ C @ Benr)*dJ
@@ -100,6 +59,77 @@ class Quad4Enr(Quad4):
         # print(self.eid, kua/1e6*60)
 
         return k * self.thickness
+
+    def enriched_gradient_operator(self, N, dN_xi):
+        """Build the enriched gradient operator
+
+        Args:
+            dN_xi: derivative of shape functions with respect to cartesian
+                coordinates
+
+        Returns:
+            numpy array shape (3 x (num_enr_dof))
+
+        Note:
+            The order of this matrix is defined by the order in the
+            element.dof.
+
+            For instance, (example in the test_quad4enr)
+
+                element[1].dof =  [2, 3, 10, 11, 8, 9, 4, 5,  # std
+                                14, 15, 16, 17,  # first zls
+                                20, 21, 22, 23, 24, 25, 26, 27]  # second zls
+
+            which is an element enriched by two zero level set. In this case,
+            the gradient operator, B, should follow this order.
+            The attribute enriched dof for each level set keeps track of those
+            dof:
+
+                model.zerolevelset[0].enriched_dof[1] = [14, 15, 16, 17]
+                model.zerolevelset[1].enriched_dof[1] = [20, 21, 22, 23,
+                                                         24, 25, 26, 27]
+
+            The, we need to know which nodes those dof are refering to in the
+            local index. This are stored in element enriched node,
+
+                element[1].enriched_nodes[0] = [1, 2]  # for 1st zls
+                element[1].enriched_nodes[1] = [1, 2, 4, 5]  # for 2nd zls
+
+        """
+        # dof = [std dofs, dofs zls[0], dofs zls[1] ... ]
+        # loop for each zero level set
+        Benr_zls = {}   # Benr for each zerp level est
+        for ind, zls in enumerate(self.zerolevelset):
+            # signed distance for nodes in this element for this zls
+            self.phi = zls.phi[self.conn]  # phi with local index
+
+            Bk = {}         # Bk for k enriched nodes
+            # enriched nodes [[nodes for the first level set], [for 2nd]]
+            for n in self.enriched_nodes[ind]:
+                # intersect1d returns sorted values
+                # if conn = [1, 4, 7, 2] and n = 4 then j = 1
+                j = self.local_node_index(n)  # local index
+
+                psi = abs(N @ self.phi) - abs(self.phi[j])
+
+                dpsi_x = np.sign(N @ self.phi)*(dN_xi[0, :] @ self.phi)
+                dpsi_y = np.sign(N @ self.phi)*(dN_xi[1, :] @ self.phi)
+
+                # store Bk using node index
+                # but use local index to access phi, N, dN_xi
+                Bk[n] = np.array([[dN_xi[0, j]*(psi) + N[j]*dpsi_x, 0],
+                                  [0, dN_xi[1, j]*(psi) + N[j]*dpsi_y],
+                                  [dN_xi[1, j]*(psi) + N[j]*dpsi_y,
+                                   dN_xi[0, j]*(psi) + N[j]*dpsi_x]])
+
+            # Arrange Benr based on the element.enriched_nodes
+            Benr_zls[ind] = np.block([Bk[i]
+                                      for i in self.enriched_nodes[ind]])
+
+        # arrange Benr based on zls order
+        Benr = np.block([Benr_zls[i]
+                         for i in range(len(self.zerolevelset))])
+        return Benr
 
     def load_body_vector(self, b_force=None, t=1):
         """Build the element vector due body forces b_force
@@ -214,17 +244,6 @@ class Quad4Enr(Quad4):
                             # traction_bc(x1, x2, t)[key] is a numpy
                             # array shape (2,)
                             pt_std += Nstd.T @ traction_bc(x1, x2, t)[key] * dL
-
-                            # pt enr alwals 0 ????
-                            # node in this element at this line
-                            node = self.local_nodes_in_side[ele_side][w]
-                            psi = abs(N @ self.phi) - abs(self.phi[node])
-
-                            N_ = []
-                            for j in range(self.num_enr_nodes):
-                                N_.append(np.array([[N[j]*psi, 0],
-                                                    [0, N[j]*psi]]))
-
                     else:
                         # Catch element that is not at boundary
                         continue

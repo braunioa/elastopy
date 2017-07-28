@@ -42,7 +42,11 @@ class Element(object):
         # depends on zero level set
         self.num_enr_dof = len(self.dof) - self.num_std_dof
 
-        self.zerolevelset = model.zerolevelset
+        # list of zero level set objects that enriches this element
+        self.zerolevelset = []
+        for i, zls in enumerate(model.zerolevelset):
+            if eid in zls.enriched_elements:
+                self.zerolevelset.append(zls)
 
         self.surf = model.surf_of_ele[eid]
 
@@ -54,6 +58,9 @@ class Element(object):
 
         # enriched nodes shape (num zerolvlset, num enr nodes)
         self.enriched_nodes = []
-        for zls in model.zerolevelset:
+        for zls in self.zerolevelset:
+            # intersec1d returns sorted
+            # Problem: B will be assembled based on this but the dofs
+            # are arranged based on model.zerolevelset.enriched_nodes
             self.enriched_nodes.append(np.intersect1d(zls.enriched_nodes,
                                                       self.conn))

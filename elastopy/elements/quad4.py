@@ -79,16 +79,16 @@ class Quad4(Element):
                 # it is a surface, a positive indicates another
                 # -1 -> zls.region['reinforcement']
                 # +1 -> zls.region['matrix']
-                
+
                 # model.material.E = [{-1: Evalue, 1: value}]
                 # first set materials using the first zls
-                self.E = [model.material.E[0][np.sign(self.zerolevelset[0].phi[i])]
+                self.E = [model.material.E[0][np.sign(model.zerolevelset[0].phi[i])]
                           for i in self.conn]
                 self.nu = [model.material.nu[0][
-                    np.sign(self.zerolevelset[0].phi[i])]
+                    np.sign(model.zerolevelset[0].phi[i])]
                            for i in self.conn]
                 # then check if other zls dominates this element
-                for ind, zls in enumerate(self.zerolevelset):
+                for ind, zls in enumerate(model.zerolevelset):
                     E = [model.material.E[ind][np.sign(zls.phi[i])]
                                   for i in self.conn]
                     nu = [model.material.nu[ind][np.sign(zls.phi[i])]
@@ -255,8 +255,8 @@ class Quad4(Element):
         # jac = [ x1_e1 x2_e1
         #         x1_e2 x2_e2 ]
         jac = dN_ei @ xyz
-        if (jac[0, 0]*jac[1, 1] - jac[0, 1]*jac[1, 0]) < 0:
-            print('Jacobiano negativo no elemento {}'.format(self.eid))
+        # if (jac[0, 0]*jac[1, 1] - jac[0, 1]*jac[1, 0]) < 0:
+        #     print('Negative Jacobiano in element {}'.format(self.eid))
 
         det_jac = abs((jac[0, 0]*jac[1, 1] -
                        jac[0, 1]*jac[1, 0]))
@@ -293,20 +293,39 @@ class Quad4(Element):
         for w, gp in zip(self.gauss_quad.weights, self.gauss_quad.points):
             N, dN_ei = self.shape_function(xez=gp)
             dJ, dN_xi, _ = self.jacobian(self.xyz, dN_ei)
-
             C = self.c_matrix(N, t)
-
-            B = np.array([
-                [dN_xi[0, 0], 0, dN_xi[0, 1], 0, dN_xi[0, 2], 0,
-                 dN_xi[0, 3], 0],
-                [0, dN_xi[1, 0], 0, dN_xi[1, 1], 0, dN_xi[1, 2], 0,
-                 dN_xi[1, 3]],
-                [dN_xi[1, 0], dN_xi[0, 0], dN_xi[1, 1], dN_xi[0, 1],
-                 dN_xi[1, 2], dN_xi[0, 2], dN_xi[1, 3], dN_xi[0, 3]]])
-
+            B = self.standard_gradient_operator(dN_xi)
             k += w * (B.T @ C @ B) * dJ
-
         return k * self.thickness
+
+    def standard_gradient_operator(self, dN_xi):
+        """Build the standard gradient operator
+
+        Args:
+            dN_xi: derivative of shape functions with respect to cartesian
+                coordinates
+
+        Returns:
+            numpy array shape (3x8)
+
+        Note:
+            The order of the matrix follows the node order in element.xyz,
+            which follows the order in element.conn. Therefore, if conn is
+            [2, 3, 5, 10], the first node, 2, is mapped to node (-1, -1) in
+            the isoparametric domain.
+
+            The node tag in conn is not important, but the direction must be
+            CCW, so the mapping is consistent and the Jacobian can be computed.
+
+        """
+        # standard strain-displacement matrix (discrete gradient operator)
+        Bj = {}
+        for j in range(self.num_std_nodes):
+            Bj[j] = np.array([[dN_xi[0, j], 0],
+                             [0, dN_xi[1, j]],
+                             [dN_xi[1, j], dN_xi[0, j]]])
+        Bstd = np.block([Bj[i] for i in range(self.num_std_nodes)])
+        return Bstd
 
     def mass_matrix(self, t=1):
         """Build element mass matrix
@@ -419,7 +438,6 @@ class Quad4(Element):
                                                        self.side_at_boundary):
                     # Check if this element is at the line with traction
                     if line == ele_boundary_line:
-
                         # perform the integral with GQ
                         for w in range(2):
                             N, dN_ei = self.shape_function(xez=gp[ele_side, w])

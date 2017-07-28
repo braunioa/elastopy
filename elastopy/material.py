@@ -11,14 +11,33 @@ class Material(object):
         mat_dic keywords (dict): dictionary with surface label and
             material paramenter value.
 
-            example:
+            Example:
 
-                Material(E={9: 1000})
+                Material(E={9: 1000, 10: 2000},
+                         nu={9: 0.3, 10: .2})
 
-          then, the keyword `E` is the attribute self.E with value
-          {9: 1000} in which 9 is the surface label and 1000 is the
-          E value at that surface
+        then, the keyword `E` is the attribute self.E with value
+        {9: 1000} in which 9 is the surface label and 1000 is the
+        E value at that surface, the second item in the dic is
+        other surface.
 
+        For level sets, the material is defined as a list of dicts,
+        E = [{material for first level set}, {material for second}],
+        so,
+
+            Example:
+
+                Material(E=[
+                    {zls1['matrix']: 1000, zls1['reinforcement]: 2000}
+                    {zls2['matrix']: 1000, zls1['reinforcement]: 5000}
+                    ]
+                         nu=[
+                    {zls1['matrix']: .3, zls1['reinforcement]: .2}
+                    {zls2['matrix']: .3, zls1['reinforcement]: .25}
+                    ]
+                )
+
+            Notice that the matrix property should be the same.
     Note:
         If case is strain, then we use the standard transformations
         in the material parameters, E and nu, in order to avoid
@@ -30,10 +49,40 @@ class Material(object):
         self.case = case
         # convert from plane stress to plane strain
         if case is 'strain':
-            for i in range(len(self.E)):
-                for region, E in self.E[i].items():
-                    self.E[i][region] = (self.E[i][region] /
-                                         (1 - self.nu[i][region]**2))
-                for region, nu in self.E[i].items():
-                    self.nu[i][region] = (self.nu[i][region] /
-                                          (1 - self.nu[i][region]))
+            # list is the case for xfem level sets
+            if type(self.E) is list:
+                for i in range(len(self.E)):
+                    for region, E in self.E[i].items():
+                        self.E[i][region] = (self.E[i][region] /
+                                             (1 - self.nu[i][region]**2))
+                    for region, nu in self.E[i].items():
+                        self.nu[i][region] = (self.nu[i][region] /
+                                              (1 - self.nu[i][region]))
+            else:
+                for region, E in self.E.items():
+                    self.E[region] = (self.E[region] /
+                                      (1 - self.nu[region]**2))
+                for region, nu in self.E.items():
+                    self.nu[region] = (self.nu[region] /
+                                       (1 - self.nu[region]))
+
+
+if __name__ is '__main__':
+    # surface 0 with E=10
+    # surface 1 with E=20
+    mat = Material(E={0: 10, 1: 20, 2:30})
+    # print(mat.E) {0: 10, 1: 20, 2: 30}
+    mat_strain = Material(E={0: 10, 1: 20, 2:30},
+                          nu={0: .3, 1: .2, 2: .33},
+                          case='strain')
+    # print(mat_strain.E){0: 10.989, 1: 20.83, 2: 33.666}
+    mat_lvlset = Material(E=[{-1: 1000, 1: 2000},
+                             {-1: 1000, 1: 5000}],
+                          nu=[{-1: .3, 1: .35},
+                              {-1: .3, 1: .4}])
+    # print(mat_lvlset.E) [{-1: 1000, 1: 2000}, {-1: 1000, 1: 5000}]
+    mat_lvlset2 = Material(E=[{-1: 1000, 1: 2000},
+                             {-1: 1000, 1: 5000}],
+                           nu=[{-1: .3, 1: .35},
+                               {-1: .3, 1: .4}], case='strain')
+    # print(mat_lvlset2.E)[{-1: 1098.90, 1: 2279.20}, {-1: 1098.90, 1: 5952.3}]
