@@ -89,6 +89,7 @@ class Build(object):
             if type(zerolevelset) is not list:
                 zerolevelset = [zerolevelset]
 
+        # only for surface material
         if material is not None:
             # aggregate material object as a model instance
             self.material = material
@@ -101,6 +102,10 @@ class Build(object):
         self.zerolevelset = []
         # loop over zerolevelset objects
         for zls in zerolevelset:
+            # TODO: better way to set material properties
+            if hasattr(zls, 'material'):
+                self.E_matrix = zls.material.E[1]
+                self.nu_matrix = zls.material.nu[1]
             # update the max dof id when DOF includes enriched dof for a zls
             # +1 to start the count enr dofs
             max_dof_id = max(max(dof) for dof in self.DOF) + 1
@@ -128,7 +133,10 @@ class Build(object):
             # unordered
             for e in zls.discontinuity_elements:
                 zls.enriched_nodes.extend(self.CONN[e])
-            zls.enriched_nodes = list(set(zls.enriched_nodes))
+
+            # set extracts an unordered collection of unique elements
+            # model enriched nodes list is sorted!
+            zls.enriched_nodes = list(sorted(set(zls.enriched_nodes)))
             self.enriched_nodes.extend(zls.enriched_nodes)
 
             # mark enriched and blending elements for this zero level set
@@ -163,8 +171,8 @@ class Build(object):
             self.enriched_elements.extend(zls.enriched_elements)
 
         self.num_std_dof = self.num_dof - self.num_enr_dof
-        self.enriched_elements = list(set(self.enriched_elements))
-        self.enriched_nodes = list(set(self.enriched_nodes))
+        self.enriched_elements = list(set(self.enriched_elements))  # Notsorted
+        self.enriched_nodes = list(sorted(set(self.enriched_nodes)))
 
 
 if __name__ == '__main__':

@@ -63,7 +63,7 @@ def internode_enrichment(U, model, grid=5):
     Ustd = U[:model.num_std_dof]
 
     # put nodes results in x, y, field_x, field_y
-    nu = nodal_to_coordinate(Ustd, model)
+    nu = dof2nodes(Ustd, model)
     # initialize inter node results (inu)
     inu = []
     uenr = []
@@ -108,7 +108,7 @@ def internode_enrichment(U, model, grid=5):
                         Nk = {}
                         # loop in enriched nodes (global tag of nodes)
                         for n in element.enriched_nodes[ind]:
-                            j = element.local_node_index(n)
+                            j = element.global2local_index(n)
                             # enrichment function for weak discontinuity
                             # TODO: abstract that as an element attribute
                             psi = abs(N @ phi) - abs(phi[j])
@@ -144,7 +144,7 @@ def internode_enrichment(U, model, grid=5):
     return u, np.array(uenr)
 
 
-def nodal_to_coordinate(field, model):
+def dof2nodes(field, model):
     """convert nodal result to coordinate base
 
     The array field is aligned with dof index, this function converts it to
@@ -172,7 +172,7 @@ def nodal_to_coordinate(field, model):
         field = [1, 2, 3, 4]
         model.XYZ = [[0, 0], [0, 1]]
 
-        >>> nodal_to_coordinate(field, model)
+        >>> dof2nodes(field, model)
         [[(0, 0), (1, 2]), [(0, 1), (3, 4)]]
     """
     u = []

@@ -1,5 +1,6 @@
 """Apply the boundary conditions to matrices and vectors"""
 
+
 def dirichlet(K, F, model, displ_bc=None):
     """Apply Dirichlet BC.
 
@@ -69,7 +70,7 @@ def dirichlet(K, F, model, displ_bc=None):
                             model.XYZ[n2, 0],
                             model.XYZ[n2, 1])
 
-                        if rx != 'free' and rx != None:
+                        if rx != 'free' and rx is not None:
                             K[2 * n1, :] = 0.0
                             K[2 * n2, :] = 0.0
                             K[2 * n1, 2 * n1] = 1.0
@@ -77,7 +78,7 @@ def dirichlet(K, F, model, displ_bc=None):
                             F[2 * n1] = d1[line][0]
                             F[2 * n2] = d2[line][0]
 
-                        if ry != 'free' and ry != None:
+                        if ry != 'free' and ry is not None:
                             K[2 * n1 + 1, :] = 0.0
                             K[2 * n2 + 1, :] = 0.0
                             K[2 * n1 + 1, 2 * n1 + 1] = 1.0
@@ -103,7 +104,7 @@ def dirichlet(K, F, model, displ_bc=None):
                             model.XYZ[n2, 0],
                             model.XYZ[n2, 1])
 
-                        if rx != 'free' and rx != None:
+                        if rx != 'free' and rx is not None:
                             K[2 * n1, :] = 0.0
                             K[2 * n2, :] = 0.0
                             K[2 * n1, 2 * n1] = 1.0
@@ -111,7 +112,7 @@ def dirichlet(K, F, model, displ_bc=None):
                             F[2 * n1] = d1[line][0]
                             F[2 * n2] = d2[line][0]
 
-                        if ry != 'free' and ry != None:
+                        if ry != 'free' and ry is not None:
                             K[2 * n1 + 1, :] = 0.0
                             K[2 * n2 + 1, :] = 0.0
                             K[2 * n1 + 1, 2 * n1 + 1] = 1.0

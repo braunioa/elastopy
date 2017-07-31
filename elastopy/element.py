@@ -36,6 +36,7 @@ class Element(object):
         self.xyz = model.XYZ[self.conn]
 
         self.dof = model.DOF[eid]
+
         self.num_std_dof = 2*len(self.conn)
         self.num_std_nodes = len(self.conn)
 
@@ -60,7 +61,7 @@ class Element(object):
         self.enriched_nodes = []
         for zls in self.zerolevelset:
             # intersec1d returns sorted
-            # Problem: B will be assembled based on this but the dofs
-            # are arranged based on model.zerolevelset.enriched_nodes
+            # B will be assembled based on this (SORTED) but the dofs
+            # are arranged based on model.zerolevelset.enriched_nodes -> SORTED
             self.enriched_nodes.append(np.intersect1d(zls.enriched_nodes,
                                                       self.conn))

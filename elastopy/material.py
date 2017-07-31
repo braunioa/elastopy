@@ -21,23 +21,9 @@ class Material(object):
         E value at that surface, the second item in the dic is
         other surface.
 
-        For level sets, the material is defined as a list of dicts,
-        E = [{material for first level set}, {material for second}],
-        so,
+        For level sets, the material is defined using regions -1,
+        for reinforcement, and 1 for matrix.
 
-            Example:
-
-                Material(E=[
-                    {zls1['matrix']: 1000, zls1['reinforcement]: 2000}
-                    {zls2['matrix']: 1000, zls1['reinforcement]: 5000}
-                    ]
-                         nu=[
-                    {zls1['matrix']: .3, zls1['reinforcement]: .2}
-                    {zls2['matrix']: .3, zls1['reinforcement]: .25}
-                    ]
-                )
-
-            Notice that the matrix property should be the same.
     Note:
         If case is strain, then we use the standard transformations
         in the material parameters, E and nu, in order to avoid
@@ -49,22 +35,12 @@ class Material(object):
         self.case = case
         # convert from plane stress to plane strain
         if case is 'strain':
-            # list is the case for xfem level sets
-            if type(self.E) is list:
-                for i in range(len(self.E)):
-                    for region, E in self.E[i].items():
-                        self.E[i][region] = (self.E[i][region] /
-                                             (1 - self.nu[i][region]**2))
-                    for region, nu in self.E[i].items():
-                        self.nu[i][region] = (self.nu[i][region] /
-                                              (1 - self.nu[i][region]))
-            else:
-                for region, E in self.E.items():
-                    self.E[region] = (self.E[region] /
-                                      (1 - self.nu[region]**2))
-                for region, nu in self.E.items():
-                    self.nu[region] = (self.nu[region] /
-                                       (1 - self.nu[region]))
+            for region, E in self.E.items():
+                self.E[region] = (self.E[region] /
+                                  (1 - self.nu[region]**2))
+            for region, nu in self.E.items():
+                self.nu[region] = (self.nu[region] /
+                                   (1 - self.nu[region]))
 
 
 if __name__ is '__main__':

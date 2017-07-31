@@ -80,27 +80,16 @@ class Quad4(Element):
                 # -1 -> zls.region['reinforcement']
                 # +1 -> zls.region['matrix']
 
-                # model.material.E = [{-1: Evalue, 1: value}]
-                # first set materials using the first zls
-                self.E = [model.material.E[0][np.sign(model.zerolevelset[0].phi[i])]
-                          for i in self.conn]
-                self.nu = [model.material.nu[0][
-                    np.sign(model.zerolevelset[0].phi[i])]
-                           for i in self.conn]
-                # then check if other zls dominates this element
-                for ind, zls in enumerate(model.zerolevelset):
-                    E = [model.material.E[ind][np.sign(zls.phi[i])]
-                                  for i in self.conn]
-                    nu = [model.material.nu[ind][np.sign(zls.phi[i])]
-                                    for i in self.conn]
-                    # set generates unique values in list
-                    # if equals 2 means that there is a material discontinuity
-                    # in the element.
-                    # the zls in which this happens control this element
-                    # materials properties
-                    if len(set(E)) == 2:
-                        self.E = E
-                        self.nu = nu
+                # zls.material.E = {-1: Evalue, 1: value}
+                # initialize material with matrix value
+                self.E = [model.E_matrix]*self.num_std_nodes
+                self.nu = [model.nu_matrix]*self.num_std_nodes
+                # loop over element zero level set
+                for zls in model.zerolevelset:
+                    # loop over element nodes with negative phi values
+                    for j in np.where(zls.phi[self.conn] < 0)[0]:
+                        self.E[j] = zls.material.E[-1]
+                        self.nu[j] = zls.material.nu[-1]
             else:
                 self.E = model.material.E[self.surf]
                 self.nu = model.material.nu[self.surf]
@@ -188,7 +177,7 @@ class Quad4(Element):
         x1, x2 = N @ xyz
         return x1, x2
 
-    def local_node_index(self, n):
+    def global2local_index(self, n):
         """Returns local index from global node index
 
         Args:
@@ -354,15 +343,15 @@ class Quad4(Element):
         else:
             nu = self.nu
 
-        self.C = np.zeros((3, 3))
-        self.C[0, 0] = 1.0
-        self.C[1, 1] = 1.0
-        self.C[1, 0] = nu
-        self.C[0, 1] = nu
-        self.C[2, 2] = (1.0 - nu)/2.0
-        self.C = (E/(1.0 - nu**2.0))*self.C
+        C = np.zeros((3, 3))
+        C[0, 0] = 1.0
+        C[1, 1] = 1.0
+        C[1, 0] = nu
+        C[0, 1] = nu
+        C[2, 2] = (1.0 - nu)/2.0
+        C = (E/(1.0 - nu**2.0))*C
 
-        return self.C
+        return C
 
     def load_body_vector(self, b_force=None, t=1):
         """Build the element vector due body forces b_force

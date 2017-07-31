@@ -119,13 +119,13 @@ def test_4zerolevelset():
 
     model = Build(mesh, zerolevelset=zls)
     assert model.zerolevelset[0].discontinuity_elements == [3]
-    assert set(model.zerolevelset[0].enriched_nodes) == set([8, 9, 5, 7])
-    assert set(model.zerolevelset[0].enriched_elements) == set([1, 2, 3, 4])
-    # dof numbering according to enriched nodes order
-    assert model.zerolevelset[0].enriched_dof[3] == [28, 29, 30, 31,
-                                                     24, 25, 26, 27]
+    assert model.zerolevelset[0].enriched_nodes == [5, 7, 8, 9]
+    assert model.zerolevelset[0].enriched_elements == [1, 2, 3, 4]
+    # dof numbering according to enriched nodes order - sorted
+    assert model.zerolevelset[0].enriched_dof[3] == [24, 25, 26, 27,
+                                                     28, 29, 30, 31]
     assert model.enriched_elements == [1, 2, 3, 4]
-    assert set(model.enriched_nodes) == set([5, 7, 8, 9])
+    assert model.enriched_nodes == [5, 7, 8, 9]  # sorted
 
 
 def test_5zerolevelset():
@@ -139,7 +139,7 @@ def test_5zerolevelset():
     mesh.CONN = np.array([[0, 1, 2, 3],
                           [1, 4, 5, 2],
                           [4, 6, 7, 5],
-                          [6, 7, 9, 7]])
+                          [6, 8, 9, 7]])
     mesh.num_ele = 4
     mesh.DOF = [[0, 1, 2, 3, 4, 5, 6, 7],
                 [2, 3, 8, 9, 10, 11, 4, 5],
@@ -156,3 +156,34 @@ def test_5zerolevelset():
     assert model.zerolevelset[0].enriched_elements == [0, 1]
     assert model.zerolevelset[1].enriched_elements == [2, 3]
     assert model.zerolevelset[0].enriched_nodes == [0, 1, 2, 3]
+    assert model.zerolevelset[1].enriched_nodes == [6, 7, 8, 9]  # sorted
+
+    # enriched dof is numbering according to enriched_nodes order
+    assert model.DOF[0] == [0, 1, 2, 3, 4, 5, 6, 7,
+                            20, 21, 22, 23, 24, 25, 26, 27]
+    assert model.DOF[1] == [2, 3, 8, 9, 10, 11, 4, 5,
+                            22, 23, 24, 25]
+    assert model.DOF[3] == [12, 13, 16, 17, 18, 19, 14, 15,
+                            28, 29, 30, 31, 32, 33, 34, 35]
+    assert model.DOF[2] == [8, 9, 12, 13, 14, 15, 10, 11,
+                            28, 29, 30, 31]
+    assert list(model.zerolevelset[0].phi) == [-0.13265306122448967,
+                                               0.11734693877551011,
+                                               0.11734693877551011,
+                                               -0.13265306122448967,
+                                               0.36734693877550939,
+                                               0.36734693877550939,
+                                               0.6173469387755075,
+                                               0.6173469387755075,
+                                               0.86734693877552016,
+                                               0.86734693877552016]
+    assert list(model.zerolevelset[1].phi) == [0.86734693877552016,
+                                               0.6173469387755075,
+                                               0.6173469387755075,
+                                               0.86734693877552016,
+                                               0.36734693877550939,
+                                               0.36734693877550939,
+                                               0.11734693877551006,
+                                               0.11734693877551004,
+                                               -0.13265306122448967,
+                                               -0.13265306122448967]

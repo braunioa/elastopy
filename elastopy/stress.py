@@ -188,7 +188,7 @@ def recovery_at_gp(U, model, t=1):
                     B_e = {}
                     for n in element.enriched_nodes[ind]:
                         # local reference of node n in element
-                        j = element.local_node_index(n)
+                        j = element.global2local_index(n)
                         psi = abs(N @ phi) - abs(phi[j])
 
                         dpsi_x = np.sign(N @ phi)*(dN_xi[0, :] @ phi)

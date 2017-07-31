@@ -51,13 +51,6 @@ class Quad4Enr(Quad4):
 
         k = np.block([[kuu, kua],
                       [kua.T, kaa]])
-
-        # np.set_printoptions(precision=3, suppress=True)
-        # print('')
-        # print(self.eid, kuu/1e6)
-        # print(self.eid, kaa/1e6*3600)
-        # print(self.eid, kua/1e6*60)
-
         return k * self.thickness
 
     def enriched_gradient_operator(self, N, dN_xi):
@@ -77,8 +70,8 @@ class Quad4Enr(Quad4):
             For instance, (example in the test_quad4enr)
 
                 element[1].dof =  [2, 3, 10, 11, 8, 9, 4, 5,  # std
-                                14, 15, 16, 17,  # first zls
-                                20, 21, 22, 23, 24, 25, 26, 27]  # second zls
+                                   14, 15, 16, 17,  # first zls
+                                   20, 21, 22, 23, 24, 25, 26, 27]  # 2nd  zls
 
             which is an element enriched by two zero level set. In this case,
             the gradient operator, B, should follow this order.
@@ -101,19 +94,18 @@ class Quad4Enr(Quad4):
         Benr_zls = {}   # Benr for each zerp level est
         for ind, zls in enumerate(self.zerolevelset):
             # signed distance for nodes in this element for this zls
-            self.phi = zls.phi[self.conn]  # phi with local index
+            phi = zls.phi[self.conn]  # phi with local index
 
             Bk = {}         # Bk for k enriched nodes
             # enriched nodes [[nodes for the first level set], [for 2nd]]
             for n in self.enriched_nodes[ind]:
-                # intersect1d returns sorted values
+                # enriched_nodes is sorted
                 # if conn = [1, 4, 7, 2] and n = 4 then j = 1
-                j = self.local_node_index(n)  # local index
+                j = self.global2local_index(n)  # local index
+                psi = abs(N @ phi) - abs(phi[j])
 
-                psi = abs(N @ self.phi) - abs(self.phi[j])
-
-                dpsi_x = np.sign(N @ self.phi)*(dN_xi[0, :] @ self.phi)
-                dpsi_y = np.sign(N @ self.phi)*(dN_xi[1, :] @ self.phi)
+                dpsi_x = np.sign(N @ phi)*(dN_xi[0, :] @ phi)
+                dpsi_y = np.sign(N @ phi)*(dN_xi[1, :] @ phi)
 
                 # store Bk using node index
                 # but use local index to access phi, N, dN_xi
