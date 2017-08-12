@@ -1,9 +1,9 @@
 """Module for quad element with 4 nodes - type 3 in gmsh
 
 """
+import numpy as np
 from ..element import Element
 from .. import quadrature
-import numpy as np
 
 
 class Quad4(Element):
